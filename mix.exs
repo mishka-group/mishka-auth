@@ -6,7 +6,8 @@ defmodule MishkaAuth.MixProject do
       app: :mishka_auth,
       version: "0.0.1",
       elixir: "~> 1.10",
-      config_path: "./config/config.exs",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      # config_path: "./config/config.exs",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -66,4 +67,7 @@ defmodule MishkaAuth.MixProject do
       links: %{"GitHub" => "https://github.com/mishka-group/mishka-auth"}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end
