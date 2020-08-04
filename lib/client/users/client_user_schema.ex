@@ -31,7 +31,7 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
      |> validate_length(:username, min: 3, max: 20, message: "نام کاربری شما باید بین ۳ الی ۲۰ کارکتر باشد.")
      |> validate_length(:email, min: 8, max: 50, message: "تعداد کارکتر های ایمیل باید بین ۸ تا ۵۰ عدد باشد.")
      |> validate_format(:email, ~r/@/, message: "فرمت ایمیل درست نمی باشد.")
-     |> unsafe_validate_unique([:username, :email], MishkaAuth.Repo, message: "ایمیل و نام کاربری نمی تواند از قبل وجود داشته باشد.")
+     |> unique_constraint(:unconfirmed_email, name: :index_on_users_verified_email, message: "ایمیل درخواست تمدید از قبل وجود دارد.")
      |> unique_constraint(:username, name: :index_on_users_username, message: "نام کاربری وارد شده از قبل وجود دارد.")
      |> unique_constraint(:email, name: :index_on_users_email, message: "ایمیل وارد شده از قبل وجود دارد.")
      |> hash_password
