@@ -1,5 +1,5 @@
 defmodule MishkaAuth.Guardian do
-  use Guardian, otp_app: :auth_service
+  use Guardian, otp_app: :mishka_auth
 
   def subject_for_token(resource, _claims) do
     # You can use any value for the subject of your token but

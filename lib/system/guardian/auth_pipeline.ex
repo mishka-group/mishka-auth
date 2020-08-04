@@ -1,7 +1,7 @@
 defmodule MishkaAuth.AuthPipeline do
 	@claims %{typ: "access"}
 
-  use Guardian.Plug.Pipeline, otp_app: :bank_error, module: MishkaAuth.Guardian, error_handler: MishkaAuth.AuthErrorHandler
+  use Guardian.Plug.Pipeline, otp_app: :mishka_auth, module: MishkaAuth.Guardian, error_handler: MishkaAuth.AuthErrorHandler
 
   # plug Guardian.Plug.VerifySession, claims: @claims
   plug Guardian.Plug.VerifyHeader, claims: @claims, realm: "Bearer"
