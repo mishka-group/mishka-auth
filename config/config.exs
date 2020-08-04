@@ -9,7 +9,7 @@ config :logger, :console,
 
 
 config :mishka_auth, MishkaAuth.Guardian,
-issuer: "auth_service",
+issuer: "mishka_auth",
 allowed_algos: ["ES512"],
 secret_key: %{
   "alg" => "ES512",
