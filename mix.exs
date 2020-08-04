@@ -62,7 +62,7 @@ defmodule MishkaAuth.MixProject do
       # This option is only needed when you don't want to use the OTP application name
       name: "postgrex",
       # These are the default files included in the package
-      files: ~w(lib .formatter.exs mix.exs README* readme*),
+      files: ~w(config lib .formatter.exs mix.exs README* readme*),
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/mishka-group/mishka-auth"}
     ]
