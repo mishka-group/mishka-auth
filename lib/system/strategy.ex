@@ -69,7 +69,7 @@ defmodule MishkaAuth.Strategy do
     }, :ok, status)
   end
 
-
+  # it should be improved like auto login after registration.{:current_user, :current_token}
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, _status, :current_user) do
     saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id)
   end
@@ -106,7 +106,6 @@ defmodule MishkaAuth.Strategy do
   end
 
   def saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id) do
-    IO.inspect user_temporary_data
     with  true <- MishkaAuth.get_config_info(:automatic_registration),
           {:ok, :add_user, user_info} <- ClientUserQuery.add_user(user_temporary_data),
           {:ok, :add_identity, _identity_info} <- ClientIdentityQuery.add_identity(%{user_id: user_info.id, identity_provider: user_temporary_data["provider"], uid: user_temporary_data["uid"], token: user_temporary_data["token"]}) do

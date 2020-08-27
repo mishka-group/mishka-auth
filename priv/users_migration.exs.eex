@@ -5,7 +5,7 @@ defmodule <%= module_prefix %>.Repo.Migrations.CreateMishkaAuthUsersTable do
     create table(:users, primary_key: false<%= if not is_nil(db_prefix), do: ", prefix: \"#{db_prefix}\"" %>) do
       add(:id, :uuid, primary_key: true)
       add(:name, :string, size: 20, null: false)
-      add(:lastname, :string, size: 20, null: false)
+      add(:lastname, :string, size: 20, null: true)
       add(:username, :string, size: 20, null: false, unique: true)
       add(:email, :string, null: false, unique: true)
       add(:password_hash, :string, null: true)

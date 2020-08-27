@@ -9,7 +9,7 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
    schema "users" do
 
      field :name, :string, size: 20, null: false
-     field :lastname, :string, size: 20, null: false
+     field :lastname, :string, size: 20, null: true
      field :username, :string, size: 20, null: false
      field :email, :string, null: false
      field :password_hash, :string, null: true
@@ -24,7 +24,7 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
    def changeset(struct, params \\ %{}) do
      struct
      |> cast(params, [:name, :lastname, :username, :email, :password_hash, :password, :status, :unconfirmed_email])
-     |> validate_required([:name, :lastname, :username, :email, :status], message: "فیلد مذکور نمی تواند خالی باشد.")
+     |> validate_required([:name, :username, :email, :status], message: "فیلد مذکور نمی تواند خالی باشد.")
      |> validate_length(:name, min: 3, max: 20, message: "نام شما باید بین ۳ الی ۲۰ کاراکتر باشد.")
      |> validate_length(:lastname, min: 3, max: 20, message: "نام خانوادگی شما باید بین ۳ الی ۲۰ کارکتر باشد.")
      |> validate_length(:password, min: 8, max: 100, message: "پسورد شما باید حداقل ۸ کاراکتر باشد و حداکثر ۲۰۰ لطفا پسورد مناسبی انتخاب کنید.")
