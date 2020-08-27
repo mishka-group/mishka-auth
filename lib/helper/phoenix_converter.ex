@@ -8,12 +8,6 @@ defmodule MishkaAuth.Helper.PhoenixConverter do
   @type error_msg() :: String.t()
   @type token() :: String.t()
 
-  @changeset_redirect_view ClientHtmlWeb.AuthView
-  @changeset_redirect_html "index.html"
-
-
-  @register_data_view ClientHtmlWeb.AuthView
-  @register_data_html "index.html"
 
   @register_changeset MishkaAuth.Client.Users.ClientUserSchema.changeset(%MishkaAuth.Client.Users.ClientUserSchema{}, %{})
 
@@ -50,14 +44,14 @@ defmodule MishkaAuth.Helper.PhoenixConverter do
 
   def changeset_redirect(conn, changeset) do
     conn
-    |> put_view(@changeset_redirect_view)
-    |> render(@changeset_redirect_html, changeset: changeset)
+    |> put_view(MishkaAuth.get_config_info(:changeset_redirect_view))
+    |> render(MishkaAuth.get_config_info(:changeset_redirect_html), changeset: changeset)
   end
 
   def register_data(conn, params, temporary_id) do
     conn
-    |> put_view(@register_data_view)
-    |> render(@register_data_html, changeset: @register_changeset, social_data: params, temporary_id: temporary_id)
+    |> put_view(MishkaAuth.get_config_info(:register_data_view))
+    |> render(MishkaAuth.get_config_info(:register_data_html), changeset: @register_changeset, social_data: params, temporary_id: temporary_id)
   end
 
   def drop_session(conn, key) do
@@ -84,7 +78,10 @@ defmodule MishkaAuth.Helper.PhoenixConverter do
         callback_redirect(conn, module, func, code, "current_user", provider)
       "refresh_token" ->
         callback_redirect(conn, module, func, code)
-      _ ->
+      n ->
+        IO.puts "++++++++++++++++"
+        IO.inspect n
+        IO.puts "++++++++++++++++"
         drop_session(conn, :request_render)
         |> session_redirect(@wrong_social_strategy, "your callback is wrong.", :error)
     end
