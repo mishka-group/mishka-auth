@@ -44,13 +44,16 @@ defmodule MishkaAuth.Strategy do
     # create or update refresh token
     # save refresh token into redis for some days Like: {10 days}
     # create access token
-    with {:ok, :save_token_into_redis, :create, user_refresh_token} <- ClientToken.create_and_save_refresh_token(user_id, %{}),
-        {:ok, access_token, clime} <- ClientToken.create_access_token(user_id) do
+    with {:ok, :save_token_into_redis, :create, user_refresh_token, refresh_clime} <- ClientToken.create_and_save_refresh_token(user_id, %{}),
+         {:ok, :access_token, access_token, access_clime} <- ClientToken.create_and_save_access_token(user_id) do
         PhoenixConverter.render_json(conn, %{
           refresh_token: user_refresh_token,
+          refresh_expires_in: refresh_clime["exp"],
+          refresh_token_type: refresh_clime["typ"],
+
           access_token: access_token,
-          expires_in: clime["exp"],
-          token_type: clime["typ"]
+          access_expires_in: access_clime["exp"],
+          access_token_type: access_clime["typ"]
         }, :ok, 200)
     else
       _ -> PhoenixConverter.render_json(conn, %{error: "Server Error"}, :error, 500)
