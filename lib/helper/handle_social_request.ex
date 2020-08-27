@@ -31,6 +31,7 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
   | Plug.Conn.t()
 
   def back_request(auth, :auth, temporary_user_uniq_id, strategy_type, conn) do
+    IO.inspect auth.info.urls
     auth.info
     |> get_basic_data(auth.provider, auth.uid)
     |> does_user_email_exist?()
@@ -56,22 +57,27 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
       %{
         email:  "#{user_info.email}",
         name:  "#{user_info.name}",
-        last_name:  "#{user_info.last_name}",
+        lastname:  "#{user_info.last_name}",
         nickname:  "#{user_info.nickname}",
-        avatar_url:  "#{user_info.urls.avatar_url}"
+        avatar_url:  "#{user_info.urls.avatar_url}",
+        username:  "#{MishkaAuth.Extra.get_github_username(user_info.urls.api_url)}",
+        provider: :github
       },
       "#{uid}"
     }
   end
 
   def get_basic_data(user_info, provider, uid) when provider == :google do
+    IO.inspect user_info
     {:ok, :get_basic_data,
       %{
         email:  "#{user_info.email}",
         name:  "#{user_info.first_name}",
-        last_name:  "#{user_info.last_name}",
+        lastname:  "#{user_info.last_name}",
         nickname:  "#{user_info.nickname}",
-        avatar_url:  "#{user_info.image}"
+        avatar_url:  "#{user_info.image}",
+        username:  "#{user_info.first_name}",
+        provider: :google
       },
       "#{uid}"
     }
@@ -119,9 +125,10 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
       %{
         email:  "#{user_info.email}",
         name:  "#{user_info.name}",
-        last_name:  "#{user_info.last_name}",
+        lastname:  "#{user_info.lastname}",
         nickname: "#{user_info.nickname}",
         avatar_url:  "#{user_info.avatar_url}",
+        username:  "#{user_info.username}",
         provider: "#{provider}",
         token: "#{token}",
         uid: "#{uid}"
@@ -190,7 +197,6 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
 
 
   def config_user_social_data({:ok, :create_or_update_user, :save_temporary_social_data, temporary_user_uniq_id}, strategy_type, conn) do
-
     case MishkaAuth.RedisClient.get_data_of_singel_id(@temporary_table , temporary_user_uniq_id) do
       {:ok, :get_data_of_singel_id, user_temporary_data} ->
         MishkaAuth.Strategy.none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, 200, strategy_type)

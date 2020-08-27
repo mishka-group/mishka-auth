@@ -69,12 +69,22 @@ defmodule MishkaAuth.Strategy do
 
 
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, _status, :current_user) do
-    PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+    if MishkaAuth.get_config_info(:automatic_registration) do
+      # register user
+      # add identities
+    else
+      PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+    end
   end
 
 
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, _status, :current_token) do
-    PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+    if MishkaAuth.get_config_info(:automatic_registration) do
+      # register user
+      # add identities
+    else
+      PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+    end
   end
 
 

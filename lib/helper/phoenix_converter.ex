@@ -1,6 +1,7 @@
 defmodule MishkaAuth.Helper.PhoenixConverter do
   import Plug.Conn
   import Phoenix.Controller
+  alias MishkaAuth.Client.Users.ClientUserSchema
 
   @type user_id() :: Ecto.UUID.t
   @type redirect_url() :: String.t()
@@ -8,10 +9,8 @@ defmodule MishkaAuth.Helper.PhoenixConverter do
   @type error_msg() :: String.t()
   @type token() :: String.t()
 
-
-  @register_changeset MishkaAuth.Client.Users.ClientUserSchema.changeset(%MishkaAuth.Client.Users.ClientUserSchema{}, %{})
-
   @wrong_social_strategy "/"
+
   # store token or user id into session
   @spec store_session(atom, token() | user_id(), redirect_url(), conn(), error_msg()) :: conn()
   def store_session(session_name, value, redirect_url, conn, msg) do
@@ -49,9 +48,11 @@ defmodule MishkaAuth.Helper.PhoenixConverter do
   end
 
   def register_data(conn, params, temporary_id) do
+    register_changeset =  ClientUserSchema.changeset(%MishkaAuth.Client.Users.ClientUserSchema{}, params)
+
     conn
     |> put_view(MishkaAuth.get_config_info(:register_data_view))
-    |> render(MishkaAuth.get_config_info(:register_data_html), changeset: @register_changeset, social_data: params, temporary_id: temporary_id)
+    |> render(MishkaAuth.get_config_info(:register_data_html), changeset: register_changeset, social_data: params, temporary_id: temporary_id)
   end
 
   def drop_session(conn, key) do
@@ -78,10 +79,7 @@ defmodule MishkaAuth.Helper.PhoenixConverter do
         callback_redirect(conn, module, func, code, "current_user", provider)
       "refresh_token" ->
         callback_redirect(conn, module, func, code)
-      n ->
-        IO.puts "++++++++++++++++"
-        IO.inspect n
-        IO.puts "++++++++++++++++"
+      _ ->
         drop_session(conn, :request_render)
         |> session_redirect(@wrong_social_strategy, "your callback is wrong.", :error)
     end
