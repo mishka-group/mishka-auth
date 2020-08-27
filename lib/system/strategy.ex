@@ -1,6 +1,8 @@
 defmodule MishkaAuth.Strategy do
   alias MishkaAuth.Client.Users.ClientToken
   alias MishkaAuth.Helper.PhoenixConverter
+  alias MishkaAuth.Client.Users.ClientUserQuery
+  alias MishkaAuth.Client.Identity.ClientIdentityQuery
 
 
 
@@ -69,22 +71,12 @@ defmodule MishkaAuth.Strategy do
 
 
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, _status, :current_user) do
-    if MishkaAuth.get_config_info(:automatic_registration) do
-      # register user
-      # add identities
-    else
-      PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
-    end
+    saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id)
   end
 
 
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, _status, :current_token) do
-    if MishkaAuth.get_config_info(:automatic_registration) do
-      # register user
-      # add identities
-    else
-      PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
-    end
+    saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id)
   end
 
 
@@ -110,6 +102,25 @@ defmodule MishkaAuth.Strategy do
       _ ->
         error = List.first(errors)
         PhoenixConverter.session_redirect(conn, "/", error.message, :error)
+    end
+  end
+
+  def saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id) do
+    IO.inspect user_temporary_data
+    with  true <- MishkaAuth.get_config_info(:automatic_registration),
+          {:ok, :add_user, user_info} <- ClientUserQuery.add_user(user_temporary_data),
+          {:ok, :add_identity, _identity_info} <- ClientIdentityQuery.add_identity(%{user_id: user_info.id, identity_provider: user_temporary_data["provider"], uid: user_temporary_data["uid"], token: user_temporary_data["token"]}) do
+
+            PhoenixConverter.session_redirect(conn, MishkaAuth.get_config_info(:login_redirect), "Your registration was successful.", :info)
+    else
+      false ->
+        PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+
+      {:error, :add_user, add_user_changeset} ->
+        PhoenixConverter.changeset_redirect(conn, add_user_changeset)
+
+      {:error, :add_identity, _identity_changeset}  ->
+        PhoenixConverter.session_redirect(conn, MishkaAuth.get_config_info(:login_redirect), "An error occurred while saving the social network, Pleas try to login with the social network concerned again.", :error)
     end
   end
 end

@@ -27,7 +27,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   @spec subscribe :: :ok | {:error, any}
 
   def subscribe do
-    Phoenix.PubSub.subscribe(MishkaAuth.PubSub, @topic)
+    Phoenix.PubSub.subscribe(MishkaAuth.get_config_info(:pub_sub), @topic)
   end
 
 
@@ -38,8 +38,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
   defp notify_subscribers({:ok, result}, event) do
-    Phoenix.PubSub.broadcast(ClientHtml.PubSub, @topic, {__MODULE__, event, result})
-    Phoenix.PubSub.broadcast(ClientHtml.PubSub, @topic <> "#{result.id}", {__MODULE__, event, result})
+    Phoenix.PubSub.broadcast(MishkaAuth.get_config_info(:pub_sub), @topic, {__MODULE__, event, result})
+    Phoenix.PubSub.broadcast(MishkaAuth.get_config_info(:pub_sub), @topic <> "#{result.id}", {__MODULE__, event, result})
   end
 
 

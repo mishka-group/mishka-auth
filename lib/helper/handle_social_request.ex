@@ -31,7 +31,6 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
   | Plug.Conn.t()
 
   def back_request(auth, :auth, temporary_user_uniq_id, strategy_type, conn) do
-    IO.inspect auth.info.urls
     auth.info
     |> get_basic_data(auth.provider, auth.uid)
     |> does_user_email_exist?()
@@ -118,7 +117,7 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
   | {:ok, :add_identity | :edit_identity, Ecto.Schema.t()}
 
 
-  def create_or_update_user({:does_user_email_exist?, {:error, :find_user_with_email}, user_info, uid}, provider, token, temporary_user_uniq_id) do
+  def create_or_update_user({:does_user_email_exist?, {:error, :find_user_with_email}, user_info, uid}, _provider, token, temporary_user_uniq_id) do
     MishkaAuth.RedisClient.insert_or_update_into_redis(
       @temporary_table,
       temporary_user_uniq_id,
@@ -129,7 +128,7 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
         nickname: "#{user_info.nickname}",
         avatar_url:  "#{user_info.avatar_url}",
         username:  "#{user_info.username}",
-        provider: "#{provider}",
+        provider: "#{user_info.provider}",
         token: "#{token}",
         uid: "#{uid}"
       },
