@@ -67,7 +67,6 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
   end
 
   def get_basic_data(user_info, provider, uid) when provider == :google do
-    IO.inspect user_info
     {:ok, :get_basic_data,
       %{
         email:  "#{user_info.email}",

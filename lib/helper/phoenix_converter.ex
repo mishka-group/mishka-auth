@@ -79,7 +79,7 @@ defmodule MishkaAuth.Helper.PhoenixConverter do
         callback_redirect(conn, module, func, code, "current_user", provider)
       "refresh_token" ->
         callback_redirect(conn, module, func, code)
-      _ ->
+      _n ->
         drop_session(conn, :request_render)
         |> session_redirect(@wrong_social_strategy, "your callback is wrong.", :error)
     end
