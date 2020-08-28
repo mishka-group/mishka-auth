@@ -27,7 +27,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   @spec subscribe :: :ok | {:error, any}
 
   def subscribe do
-    Phoenix.PubSub.subscribe(MishkaAuth.PubSub, @topic)
+    Phoenix.PubSub.subscribe(MishkaAuth.get_config_info(:pub_sub), @topic)
   end
 
 
@@ -38,8 +38,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
   defp notify_subscribers({:ok, result}, event) do
-    Phoenix.PubSub.broadcast(ClientHtml.PubSub, @topic, {__MODULE__, event, result})
-    Phoenix.PubSub.broadcast(ClientHtml.PubSub, @topic <> "#{result.id}", {__MODULE__, event, result})
+    Phoenix.PubSub.broadcast(MishkaAuth.get_config_info(:pub_sub), @topic, {__MODULE__, event, result})
+    Phoenix.PubSub.broadcast(MishkaAuth.get_config_info(:pub_sub), @topic <> "#{result.id}", {__MODULE__, event, result})
   end
 
 
@@ -332,6 +332,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
           | {:ok, :check_password_with_username, :email | :username, Ecto.Schema.t()}
   def check_password_user_and_password(username, password, :username) do
     with {:ok, :find_user_with_username, user_info} <- find_user_with_username(username),
+         {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
           {:ok, :check_password_with_username, :username, user_info}
@@ -343,6 +344,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
   def check_password_user_and_password(email, password, :email) do
     with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email),
+         {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
           {:ok, :check_password_with_username, :email, user_info}
@@ -352,6 +354,10 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     end
   end
 
+
+  def chack_password_not_null(pass) do
+    if pass == nil, do: {:error, :chack_password_not_null}, else: {:ok, :chack_password_not_null}
+  end
   def set_set_systematic_user_data(user_params, :direct) do
     Map.merge(%{"unconfirmed_email" => user_params["email"]}, MishkaAuth.Extra.strong_params(user_params, @register_params))
   end

@@ -1,6 +1,8 @@
 defmodule MishkaAuth.Strategy do
   alias MishkaAuth.Client.Users.ClientToken
   alias MishkaAuth.Helper.PhoenixConverter
+  alias MishkaAuth.Client.Users.ClientUserQuery
+  alias MishkaAuth.Client.Identity.ClientIdentityQuery
 
 
 
@@ -42,13 +44,16 @@ defmodule MishkaAuth.Strategy do
     # create or update refresh token
     # save refresh token into redis for some days Like: {10 days}
     # create access token
-    with {:ok, :save_token_into_redis, :create, user_refresh_token} <- ClientToken.create_and_save_refresh_token(user_id, %{}),
-        {:ok, access_token, clime} <- ClientToken.create_access_token(user_id) do
+    with {:ok, :save_token_into_redis, :create, user_refresh_token, refresh_clime} <- ClientToken.create_and_save_refresh_token(user_id, %{}),
+         {:ok, :access_token, access_token, access_clime} <- ClientToken.create_and_save_access_token(user_id) do
         PhoenixConverter.render_json(conn, %{
           refresh_token: user_refresh_token,
+          refresh_expires_in: refresh_clime["exp"],
+          refresh_token_type: refresh_clime["typ"],
+
           access_token: access_token,
-          expires_in: clime["exp"],
-          token_type: clime["typ"]
+          access_expires_in: access_clime["exp"],
+          access_token_type: access_clime["typ"]
         }, :ok, 200)
     else
       _ -> PhoenixConverter.render_json(conn, %{error: "Server Error"}, :error, 500)
@@ -67,14 +72,14 @@ defmodule MishkaAuth.Strategy do
     }, :ok, status)
   end
 
-
+  # it should be improved like auto login after registration.{:current_user, :current_token}
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, _status, :current_user) do
-    PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+    saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id)
   end
 
 
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, _status, :current_token) do
-    PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+    saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id)
   end
 
 
@@ -100,6 +105,24 @@ defmodule MishkaAuth.Strategy do
       _ ->
         error = List.first(errors)
         PhoenixConverter.session_redirect(conn, "/", error.message, :error)
+    end
+  end
+
+  def saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id) do
+    with  true <- MishkaAuth.get_config_info(:automatic_registration),
+          {:ok, :add_user, user_info} <- ClientUserQuery.add_user(user_temporary_data),
+          {:ok, :add_identity, _identity_info} <- ClientIdentityQuery.add_identity(%{user_id: user_info.id, identity_provider: user_temporary_data["provider"], uid: user_temporary_data["uid"], token: user_temporary_data["token"]}) do
+
+            PhoenixConverter.session_redirect(conn, MishkaAuth.get_config_info(:login_redirect), "Your registration was successful.", :info)
+    else
+      false ->
+        PhoenixConverter.register_data(conn, user_temporary_data, temporary_user_uniq_id)
+
+      {:error, :add_user, add_user_changeset} ->
+        PhoenixConverter.changeset_redirect(conn, add_user_changeset)
+
+      {:error, :add_identity, _identity_changeset}  ->
+        PhoenixConverter.session_redirect(conn, MishkaAuth.get_config_info(:login_redirect), "An error occurred while saving the social network, Pleas try to login with the social network concerned again.", :error)
     end
   end
 end

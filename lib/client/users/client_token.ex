@@ -12,6 +12,11 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     {:ok, :create_and_update_current_token, token}
   end
 
+  def create_and_save_access_token(id, params \\ %{}) do
+    {:ok, token, clime} = encode_and_sign_token(id, params, MishkaAuth.get_config_info(:user_access_token_expire_time))
+    {:ok, :access_token, token, clime}
+    |> save_token_into_redis(id, MishkaAuth.get_config_info(:user_access_token_expire_time))
+  end
 
   def create_and_save_refresh_token(id, params \\ %{}) do
     encode_and_sign_token(id, params, MishkaAuth.get_config_info(:user_refresh_token_expire_time))
@@ -45,13 +50,20 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     MishkaAuth.RedisClient.insert_or_update_into_redis(MishkaAuth.get_config_info(:refresh_token_table), id, %{token: new_token}, time)
   end
 
+
+  def save_token_into_redis({:ok, :access_token, access_token, clime}, id, time) do
+    MishkaAuth.RedisClient.insert_or_update_into_redis(MishkaAuth.get_config_info(:access_token_table), id, %{token: access_token}, time)
+    {:ok, :access_token, access_token, clime}
+  end
+
   def save_token_into_redis({:ok, :current_token, new_token}, id, time) do
     MishkaAuth.RedisClient.insert_or_update_into_redis(MishkaAuth.get_config_info(:token_table), id, %{token: new_token}, time)
   end
 
-  def save_token_into_redis({:ok, user_token, _clime}, id, time) do
-    MishkaAuth.RedisClient.insert_or_update_into_redis(MishkaAuth.get_config_info(:token_table), id, %{token: user_token}, time)
-    {:ok, :save_token_into_redis, :create, user_token}
+  # login refresh_token
+  def save_token_into_redis({:ok, user_token, clime}, id, time) do
+    MishkaAuth.RedisClient.insert_or_update_into_redis(MishkaAuth.get_config_info(:refresh_token_table), id, %{token: user_token}, time)
+    {:ok, :save_token_into_redis, :create, user_token, clime}
   end
 
   def valid_refresh_token(token) do
@@ -77,15 +89,16 @@ defmodule MishkaAuth.Client.Users.ClientToken do
   end
 
   def verify_token(refresh_token, access_token, :refresh_token) do
-    with {:ok, :get_and_verify_token_on_redis, _token, _token_table, user_id} <- get_and_verify_token_on_redis(refresh_token, MishkaAuth.get_config_info(:refresh_token_table)),
-         {:ok, _access_claims} <- verify_token(access_token) do
+    with  {:ok, :verify_token, :refresh_token, user_id} <- verify_token(refresh_token, :refresh_token),
+          {:ok, :verify_token, :access_token, _access_token_user_id} <- verify_token(access_token, :access_token) do
 
-         {:ok, :verify_token, :refresh_token, user_id}
+         {:ok, :verify_token, :refresh_token_and_access_token, user_id}
 
      else
-       {:error, :get_and_verify_token_on_redis} ->
+        {:error, :verify_token, :refresh_token} ->
          {:error, :verify_token, :refresh_token}
-        _ ->
+
+        {:error, :verify_token, :access_token} ->
          {:error, :verify_token, :access_token}
      end
    end
@@ -106,7 +119,6 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     with {:ok, :get_and_verify_token_on_redis, _token, _token_table, user_id} <- get_and_verify_token_on_redis(user_token, MishkaAuth.get_config_info(:token_table) ) do
 
         {:ok, :verify_token, :current_token, user_id}
-
     else
       _ ->
         {:error, :verify_token, :current_token}
@@ -115,9 +127,10 @@ defmodule MishkaAuth.Client.Users.ClientToken do
 
 
    def verify_token(access_token, :access_token) do
-     with {:ok, access_claims} <- verify_token(access_token),
-         {:ok, %{id: user_id}} <- get_id_from_jwt_climes(access_claims) do
+     with {:ok, :get_and_verify_token_on_redis, _token, _token_table, user_id} <- get_and_verify_token_on_redis(access_token, MishkaAuth.get_config_info(:access_token_table)) do
+
        {:ok, :verify_token, :access_token, user_id}
+
      else
         _ ->
          {:error, :verify_token, :access_token}
@@ -127,7 +140,7 @@ defmodule MishkaAuth.Client.Users.ClientToken do
 
    def verify_and_update_token(conn, refresh_token, access_token, :refresh_token) do
     case verify_token(refresh_token, access_token, :refresh_token) do
-      {:ok, :verify_token, :refresh_token, user_id} ->
+      {:ok, :verify_token, :refresh_token_and_access_token, user_id} ->
         MishkaAuth.Strategy.registered_user_routing(user_id, conn, :refresh_token, 2)
       {:error, :verify_token, :refresh_token} ->
         MishkaAuth.Helper.PhoenixConverter.render_json(conn, %{error: "Invalid Refresh Token."}, :error, 401)

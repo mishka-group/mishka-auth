@@ -56,9 +56,11 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
       %{
         email:  "#{user_info.email}",
         name:  "#{user_info.name}",
-        last_name:  "#{user_info.last_name}",
+        lastname:  "#{user_info.last_name}",
         nickname:  "#{user_info.nickname}",
-        avatar_url:  "#{user_info.urls.avatar_url}"
+        avatar_url:  "#{user_info.urls.avatar_url}",
+        username:  "#{MishkaAuth.Extra.get_github_username(user_info.urls.api_url)}",
+        provider: :github
       },
       "#{uid}"
     }
@@ -69,9 +71,11 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
       %{
         email:  "#{user_info.email}",
         name:  "#{user_info.first_name}",
-        last_name:  "#{user_info.last_name}",
+        lastname:  "#{user_info.last_name}",
         nickname:  "#{user_info.nickname}",
-        avatar_url:  "#{user_info.image}"
+        avatar_url:  "#{user_info.image}",
+        username:  "#{user_info.first_name}",
+        provider: :google
       },
       "#{uid}"
     }
@@ -112,17 +116,18 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
   | {:ok, :add_identity | :edit_identity, Ecto.Schema.t()}
 
 
-  def create_or_update_user({:does_user_email_exist?, {:error, :find_user_with_email}, user_info, uid}, provider, token, temporary_user_uniq_id) do
+  def create_or_update_user({:does_user_email_exist?, {:error, :find_user_with_email}, user_info, uid}, _provider, token, temporary_user_uniq_id) do
     MishkaAuth.RedisClient.insert_or_update_into_redis(
       @temporary_table,
       temporary_user_uniq_id,
       %{
         email:  "#{user_info.email}",
         name:  "#{user_info.name}",
-        last_name:  "#{user_info.last_name}",
+        lastname:  "#{user_info.lastname}",
         nickname: "#{user_info.nickname}",
         avatar_url:  "#{user_info.avatar_url}",
-        provider: "#{provider}",
+        username:  "#{user_info.username}",
+        provider: "#{user_info.provider}",
         token: "#{token}",
         uid: "#{uid}"
       },
@@ -190,7 +195,6 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
 
 
   def config_user_social_data({:ok, :create_or_update_user, :save_temporary_social_data, temporary_user_uniq_id}, strategy_type, conn) do
-
     case MishkaAuth.RedisClient.get_data_of_singel_id(@temporary_table , temporary_user_uniq_id) do
       {:ok, :get_data_of_singel_id, user_temporary_data} ->
         MishkaAuth.Strategy.none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, 200, strategy_type)
