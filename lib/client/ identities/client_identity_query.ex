@@ -12,7 +12,7 @@ defmodule MishkaAuth.Client.Identity.ClientIdentityQuery do
 
   @type user_id()  :: Ecto.UUID.t
   @type uid()  :: Ecto.UUID.t
-  @type provider() :: String.t()
+  @type provider() :: String.t() | atom()
 
 
   @spec find_identity(uid) :: {:error, :find_identity} | {:ok, :find_identity, Ecto.Schema.t()}
