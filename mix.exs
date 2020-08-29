@@ -13,7 +13,8 @@ defmodule MishkaAuth.MixProject do
       package: package(),
       deps: deps(),
       name: "MishkaAuth",
-      source_url: "https://github.com/mishka-group/mishka-auth"
+      source_url: "https://github.com/mishka-group/mishka-auth",
+      dialyzer: [plt_add_apps: [:mix]]
     ]
   end
 

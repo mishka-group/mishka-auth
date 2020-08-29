@@ -25,6 +25,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
     ```
   """
   @spec login_with_username(atom(), Plug.Conn.t(), username(), password()) :: Plug.Conn.t()
+
   def login_with_username(:refresh_token, conn, username, password) do
     with {:ok, :check_password_with_username, :username, user_info} <- ClientUserQuery.check_password_user_and_password(username, password, :username) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :refresh_token, 2)
@@ -62,6 +63,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
     it should be noted, grant_type and scope will be added for handling your user request and requested data.
   """
   @spec login_with_email(atom(), Plug.Conn.t(), email(), password()) :: Plug.Conn.t()
+
   def login_with_email(:refresh_token, conn, email, password) do
     with {:ok, :check_password_with_username, :email, user_info} <- ClientUserQuery.check_password_user_and_password(email, password, :email) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :refresh_token, 2)
@@ -93,6 +95,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
 
 
   @spec register(Plug.Conn.t(), map, temporary_id(), :social, :html | :json) :: Plug.Conn.t()
+
   def register(conn, params, temporary_id, :social, type) do
     case ClientUserQuery.add_user(ClientUserQuery.set_set_systematic_user_data(params, :social)) do
       {:ok, :add_user, user_info} ->
@@ -108,6 +111,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
 
 
   @spec register(Plug.Conn.t(), map, :normal, :html | :json) :: Plug.Conn.t()
+
   def register(conn, params, :normal, type) do
     case ClientUserQuery.add_user(ClientUserQuery.set_set_systematic_user_data(params, :direct)) do
       {:ok, :add_user, _user_info} ->

@@ -355,9 +355,15 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
 
+  @spec chack_password_not_null(password()) ::
+          {:error, :chack_password_not_null} | {:ok, :chack_password_not_null}
+
   def chack_password_not_null(pass) do
     if pass == nil, do: {:error, :chack_password_not_null}, else: {:ok, :chack_password_not_null}
   end
+
+  @spec set_set_systematic_user_data(map, :direct | :social) :: map
+
   def set_set_systematic_user_data(user_params, :direct) do
     Map.merge(%{"unconfirmed_email" => user_params["email"]}, MishkaAuth.Extra.strong_params(user_params, @register_params))
   end

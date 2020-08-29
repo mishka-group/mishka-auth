@@ -85,6 +85,7 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
     if there are errors after returning social provider, this function create a list of errors
   """
   @spec error_getter(any) :: [any]
+
   def error_getter(errors) do
     Enum.map(errors, fn err ->
       %{message: err.message, message_key: err.message_key}

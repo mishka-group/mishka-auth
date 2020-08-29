@@ -14,6 +14,11 @@ defmodule MishkaAuth.Client.Identity.ClientIdentitySchema do
      timestamps()
    end
 
+   @spec changeset(
+           {map, map} | %{:__struct__ => atom | %{__changeset__: map}, optional(atom) => any},
+           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
+         ) :: Ecto.Changeset.t()
+
    def changeset(struct, params \\ %{}) do
      struct
      |> cast(params, [:identity_provider, :uid, :token, :user_id])

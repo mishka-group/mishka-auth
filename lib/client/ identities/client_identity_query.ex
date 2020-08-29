@@ -181,6 +181,11 @@ defmodule MishkaAuth.Client.Identity.ClientIdentityQuery do
   end
 
 
+  @spec add_with_user_redis_data(binary, any) ::
+          {:error, :add_with_user_redis_data}
+          | {:error, :add_identity, Ecto.Changeset.t()}
+          | {:ok, :add_identity, %{optional(atom) => any}}
+
   def add_with_user_redis_data(temporary_id, user_id) do
     case MishkaAuth.RedisClient.get_data_of_singel_id(MishkaAuth.get_config_info(:temporary_table) , temporary_id) do
       {:ok, :get_data_of_singel_id, user_temporary_data} ->

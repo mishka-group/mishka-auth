@@ -34,6 +34,8 @@ defmodule MishkaAuth.Extra do
 
 
   # this function can convert %{name: "shahryar", last_name: "tavakkoli"} to ["name", "shahryar", "last_name", "tavakkoli"]
+  @spec map_to_single_list_with_string_key(map()) :: list(any)
+
   def map_to_single_list_with_string_key(params) do
     params
     |> Enum.map(fn {k, v} ->
@@ -43,6 +45,8 @@ defmodule MishkaAuth.Extra do
   end
 
 
+  @spec list_to_map(any) :: map
+
   def list_to_map(params) do
     params
     |> Enum.chunk_every(2)
@@ -51,12 +55,15 @@ defmodule MishkaAuth.Extra do
   end
 
 
+  @spec strong_params(map, [any]) :: map
+
   def strong_params(params, allowed_fields) do
     Map.take(params, allowed_fields)
   end
 
 
   @spec get_changeset_error(Ecto.Changeset.t()) :: %{optional(atom) => [binary]}
+
   def get_changeset_error(changeset) do
     traverse_errors(changeset, fn {msg, opts} ->
        Enum.reduce(opts, msg, fn {key, _value}, acc ->
@@ -64,6 +71,8 @@ defmodule MishkaAuth.Extra do
        end)
     end)
   end
+
+  @spec get_github_username(binary) :: String.t()
 
   def get_github_username(user_profile_url) do
     String.split(user_profile_url, ~r{/})

@@ -21,6 +21,11 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
      timestamps()
    end
 
+   @spec changeset(
+           {map, map} | %{:__struct__ => atom | %{__changeset__: map}, optional(atom) => any},
+           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
+         ) :: Ecto.Changeset.t()
+
    def changeset(struct, params \\ %{}) do
      struct
      |> cast(params, [:name, :lastname, :username, :email, :password_hash, :password, :status, :unconfirmed_email])
@@ -37,11 +42,21 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
      |> hash_password
    end
 
+   @spec unconfirmed_email_changeset(
+           {map, map} | %{:__struct__ => atom | %{__changeset__: map}, optional(atom) => any},
+           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
+         ) :: Ecto.Changeset.t()
+
    def unconfirmed_email_changeset(struct, params \\ %{}) do
      struct
      |> cast(params, [:unconfirmed_email])
      |> validate_required([:unconfirmed_email], message: "متاسفانه ایمیل فعال سازی ارسال نگردیده است.")
    end
+
+   @spec change_password_changeset(
+           {map, map} | %{:__struct__ => atom | %{__changeset__: map}, optional(atom) => any},
+           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
+         ) :: Ecto.Changeset.t()
 
    def change_password_changeset(struct, params \\ %{}) do
      struct

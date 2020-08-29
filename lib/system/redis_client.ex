@@ -4,6 +4,8 @@ defmodule MishkaAuth.RedisClient do
       it should be noted it does your work with easy way
     """
 
+    @spec insert_or_update_into_redis(binary, binary, map(), any) ::
+            {:ok, :insert_or_update_into_redis}
     @doc """
       with this function you can connect to redis file for example `redis-server redis.conf`,
       its password was put like hardcode. you should change it in future.
@@ -35,6 +37,13 @@ defmodule MishkaAuth.RedisClient do
         {:ok, :insert_or_update_into_redis}
     end
 
+    @spec get_all_fields_of_record_redis(binary, binary) :: [
+            nil
+            | binary
+            | [nil | binary | [any] | integer | Redix.Error.t()]
+            | integer
+            | Redix.Error.t()
+          ]
     @doc """
       show all fields of redis record
     """
@@ -44,6 +53,13 @@ defmodule MishkaAuth.RedisClient do
       |> Redix.pipeline!([["HGETALL",table_name <> record_id]])
     end
 
+    @spec get_singel_field_record_of_redis(any, any, any) :: [
+            nil
+            | binary
+            | [nil | binary | [any] | integer | Redix.Error.t()]
+            | integer
+            | Redix.Error.t()
+          ]
     @doc """
       show singel fields of redis record
     """
@@ -53,6 +69,9 @@ defmodule MishkaAuth.RedisClient do
       |> Redix.pipeline!([["HGET","#{table_name}#{record_id}", field_name]])
     end
 
+    @spec delete_record_of_redis(binary, binary) ::
+            {:error, :get_all_fields_of_record_redis, <<_::256>>}
+            | {:ok, :delete_record_of_redis, <<_::168>>}
     @doc """
       delete redis record
     """
@@ -68,6 +87,10 @@ defmodule MishkaAuth.RedisClient do
       end
     end
 
+    @spec convert_output_of_get_all_fields_of_record_redis(maybe_improper_list) ::
+            {:error, :get_all_fields_of_record_redis, <<_::256>>}
+            | {:ok, :get_all_fields_of_record_redis, any}
+
     def convert_output_of_get_all_fields_of_record_redis(params) do
       case params do
         [[]] -> {:error, :get_all_fields_of_record_redis, "The data concerned doesn't exist"}
@@ -78,6 +101,27 @@ defmodule MishkaAuth.RedisClient do
           {:ok, :get_all_fields_of_record_redis, record}
       end
     end
+
+    @spec delete_field_of_record_redis(binary, binary, any) ::
+            {:error,
+             atom
+             | %{
+                 :__exception__ => any,
+                 :__struct__ => Redix.ConnectionError | Redix.Error,
+                 optional(:message) => binary,
+                 optional(:reason) => atom
+               }}
+            | {:ok,
+               :delete_field_of_record_redis
+               | [
+                   nil
+                   | binary
+                   | [nil | binary | [any] | integer | map]
+                   | integer
+                   | Redix.Error.t()
+                 ]}
+            | {:error, :delete_field_of_record_redis | :get_all_fields_of_record_redis,
+               <<_::256>>}
 
     @doc """
       delete singel field of redis record
@@ -94,6 +138,10 @@ defmodule MishkaAuth.RedisClient do
       end
     end
 
+    @spec get_expire_time_of_redis(binary, binary) ::
+            {:error, :get_expire_time_error_handler, <<_::256>>}
+            | {:ok, :get_expire_time,
+               nil | binary | [nil | binary | [any] | integer | map] | integer | Redix.Error.t()}
     @doc """
       get expire time of singel record
     """
@@ -119,6 +167,9 @@ defmodule MishkaAuth.RedisClient do
       end
     end
 
+    @spec update_expire_time_of_redis(binary, binary, any) ::
+            {:error, :update_expire_time_of_error_handler, <<_::256>>}
+            | {:ok, :update_expire_time_of_redis, <<_::240>>}
     @doc """
       get expire time of singel record
     """
@@ -145,6 +196,10 @@ defmodule MishkaAuth.RedisClient do
     end
 
 
+
+    @spec get_data_of_singel_id(binary, binary) ::
+            {:error, :get_all_fields_of_record_redis, <<_::256>>}
+            | {:ok, :get_data_of_singel_id, map}
 
     def get_data_of_singel_id(table_name, record_id) do
       data = get_all_fields_of_record_redis(table_name, record_id)

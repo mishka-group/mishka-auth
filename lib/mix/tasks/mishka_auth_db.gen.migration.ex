@@ -10,6 +10,7 @@ defmodule Mix.Tasks.MishkaAuth.Db.Gen.Migration do
   import Mix.Generator
 
 
+  @spec run([any]) :: :ok
   @doc false
   def run(args) do
     no_umbrella!("ecto.gen.migration")
@@ -34,6 +35,8 @@ defmodule Mix.Tasks.MishkaAuth.Db.Gen.Migration do
     end)
   end
 
+  @spec generated_file(binary, binary, binary) :: boolean
+
   def generated_file(filename, source_path, path) do
     generated_file =
       EEx.eval_file(source_path,
@@ -45,26 +48,28 @@ defmodule Mix.Tasks.MishkaAuth.Db.Gen.Migration do
     create_directory(path)
     create_file(target_file, generated_file)
   end
-  def app_module do
+
+  defp app_module do
     Mix.Project.config()
     |> Keyword.fetch!(:app)
     |> to_string()
     |> Macro.camelize()
   end
 
+  @spec timestamp :: binary
   def timestamp do
     {{y, m, d}, {hh, mm, ss}} = :calendar.universal_time()
     "#{y}#{pad(m)}#{pad(d)}#{pad(hh)}#{pad(mm)}#{pad(ss)}"
   end
 
 
-  def prefix do
+  defp prefix do
     :mishka_auth
     |> Application.fetch_env!(MishkaAuth)
     |> Keyword.get(:prefix, nil)
   end
 
 
-  def pad(i) when i < 10, do: <<?0, ?0 + i>>
-  def pad(i), do: to_string(i)
+  defp pad(i) when i < 10, do: <<?0, ?0 + i>>
+  defp pad(i), do: to_string(i)
 end
