@@ -1,5 +1,7 @@
 defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
+  import  Ecto.Query
+
   @type username() :: String.t()
   @type password() :: String.t()
   @type email() :: String.t()
@@ -16,7 +18,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
   alias MishkaAuth.Helper.Db
   alias MishkaAuth.Client.Users.ClientUserSchema
-#   alias MishkaAuth.Guardian
+
 
 
 
@@ -371,4 +373,37 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   def set_set_systematic_user_data(user_params, :social) do
     Map.merge(%{"unconfirmed_email" => nil, "status" => "active"}, MishkaAuth.Extra.strong_params(user_params, @register_params))
   end
+
+  def show_public_info_of_user(user_id, :user_id) do
+    query = from u in ClientUserSchema,
+    where: u.id == ^user_id,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email
+    }
+    case Db.repo.one(query) do
+      nil       -> {:error, :show_public_info_of_user, :user_id}
+      user_info  -> {:ok, :show_public_info_of_user, :user_id, user_info}
+    end
+  end
+
+  def show_public_info_of_user(user_email, :email) do
+    query = from u in ClientUserSchema,
+    where: u.email == ^user_email,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email
+    }
+    case Db.repo.one(query) do
+      nil       -> {:error, :show_public_info_of_user, :email}
+      user_info  -> {:ok, :show_public_info_of_user, :email, user_info}
+    end
+  end
+
 end

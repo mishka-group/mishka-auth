@@ -180,6 +180,19 @@ defmodule MishkaAuth.Client.Identity.ClientIdentityQuery do
     end
   end
 
+  @spec find_user_identities(uid()) :: list(map() | any())
+  def find_user_identities(user_id) do
+    query = from u in ClientIdentitySchema,
+        where: u.user_id == ^user_id,
+        select: %{
+          id: u.id,
+          identity_provider: u.identity_provider,
+          uid: u.uid,
+          token: u.token,
+          user_id: u.user_id
+        }
+    Db.repo.all(query)
+  end
 
   @spec add_with_user_redis_data(binary, any) ::
           {:error, :add_with_user_redis_data}
