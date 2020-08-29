@@ -247,4 +247,28 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     if token ===  redis_token, do: {:ok, :same_token_between_client_and_redis} , else: {:error, :same_token_between_client_and_redis}
   end
 
+
+  @spec delete_user_token(any, :access_token | :all_token | :refresh_token | :user_token) ::
+          [any]
+          | {:error, :get_all_fields_of_record_redis, <<_::256>>}
+          | {:ok, :delete_record_of_redis, <<_::168>>}
+
+  def delete_user_token(user_id, :refresh_token) do
+    MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(:refresh_token_table), user_id)
+  end
+
+  def delete_user_token(user_id, :access_token) do
+    MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(:access_token_table), user_id)
+  end
+
+  def delete_user_token(user_id, :user_token) do
+    MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(:token_table), user_id)
+  end
+
+  def delete_user_token(user_id, :all_token) do
+    [:refresh_token_table, :access_token_table, :token_table]
+    |> Enum.map(fn strategy ->
+      MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(strategy), user_id)
+    end)
+  end
 end
