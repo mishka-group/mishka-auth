@@ -239,8 +239,10 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
          {:ok, :is_user_activated_with_id?, user_info}
     else
-      {:error, :find_user_with_user_id}     -> {:error, :is_user_activated_with_id?, :user_not_found}
-      {:error, :is_unconfirmed_email_nil}   -> {:error, :is_user_activated_with_id?, :user_not_activated}
+      {:error, :find_user_with_user_id}     ->
+        {:error, :is_user_activated_with_id?, :user_not_found}
+      {:error, :is_unconfirmed_email_nil}   ->
+        {:error, :is_user_activated_with_id?, :user_not_activated}
     end
   end
 
@@ -289,9 +291,11 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
       {:ok, :edit_user_password, user_update_info}
     else
-      {:error, :find_user_with_email} -> {:error, :edit_user_password, :user_not_found}
+      {:error, :find_user_with_email} ->
+        {:error, :edit_user_password, :user_not_found}
 
-      {:error, :update_user_password, changeset} -> {:error, :edit_user_password, :data_input_problem, changeset}
+      {:error, :update_user_password, changeset} ->
+        {:error, :edit_user_password, :data_input_problem, changeset}
     end
   end
 
@@ -312,7 +316,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
       {:ok, :edit_user_verified_email}
     else
-      {:error, :find_user_with_email} -> {:error, :edit_user_password, :user_not_found}
+      {:error, :find_user_with_email} ->
+        {:error, :edit_user_password, :user_not_found}
     end
   end
 
@@ -337,7 +342,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_with_username, :username, user_info}
+          {:ok, :check_password_user_and_password, :username, user_info}
     else
       _ ->
         {:error, :check_password_user_and_password, :username}
@@ -349,7 +354,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_with_username, :email, user_info}
+          {:ok, :check_password_user_and_password, :email, user_info}
     else
       _ ->
         {:error, :check_password_user_and_password, :email}
@@ -360,7 +365,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   @spec chack_password_not_null(password()) ::
           {:error, :chack_password_not_null} | {:ok, :chack_password_not_null}
 
-  def chack_password_not_null(pass) do
+  defp chack_password_not_null(pass) do
     if pass == nil, do: {:error, :chack_password_not_null}, else: {:ok, :chack_password_not_null}
   end
 

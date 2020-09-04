@@ -73,7 +73,6 @@ defmodule MishkaAuth.Extra do
   end
 
   @spec get_github_username(binary) :: String.t()
-
   def get_github_username(user_profile_url) do
     String.split(user_profile_url, ~r{/})
     |> List.last
