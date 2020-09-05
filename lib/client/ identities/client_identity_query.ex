@@ -126,7 +126,8 @@ defmodule MishkaAuth.Client.Identity.ClientIdentityQuery do
           {:error, :delete_identity, :user_doesnt_exist}
       end
     rescue
-      _e in Ecto.ConstraintError -> {:error, :delete_identity, :forced_to_delete}
+      _e in Ecto.ConstraintError ->
+        {:error, :delete_identity, :forced_to_delete}
     end
   end
 

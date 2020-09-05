@@ -78,6 +78,7 @@ defmodule MishkaAuth.Extra do
     |> List.last
   end
 
+  @spec plug_request(any) :: {:error, :plug_request} | {:ok, :plug_request, any}
   def plug_request(%Plug.Conn{} = plug) do
     case plug.status do
       number -> {:ok, :plug_request, number}
@@ -88,6 +89,7 @@ defmodule MishkaAuth.Extra do
     {:error, :plug_request}
   end
 
+  @spec plug_request_with_session(any, any) :: {:ok, :plug_request_with_session, any}
   def plug_request_with_session(%Plug.Conn{} = plug, type) do
     case plug.private.phoenix_flash[type] do
       msg -> {:ok, :plug_request_with_session, msg}
