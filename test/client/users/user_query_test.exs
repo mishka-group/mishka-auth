@@ -17,7 +17,7 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
   }
 
 
-  describe "Happy | User query basic CRUD (▰˘◡˘▰)" do
+  describe "Happy | User Query basic CRUD (▰˘◡˘▰)" do
     test "add user" do
       {:ok, :add_user, _user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
     end
@@ -105,7 +105,7 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
 
 
-  describe "UnHappy | Admin Categories basic CRUD ಠ╭╮ಠ" do
+  describe "UnHappy | User Query basic CRUD ಠ╭╮ಠ" do
     test "add user" do
       {:error, :add_user, _changeset} = assert ClientUserQuery.add_user(%{email: "test"})
     end

@@ -77,4 +77,24 @@ defmodule MishkaAuth.Extra do
     String.split(user_profile_url, ~r{/})
     |> List.last
   end
+
+  def plug_request(%Plug.Conn{} = plug) do
+    case plug.status do
+      number -> {:ok, :plug_request, number}
+    end
+  end
+
+  def plug_request(_) do
+    {:error, :plug_request}
+  end
+
+  def plug_request_with_session(%Plug.Conn{} = plug, type) do
+    case plug.private.phoenix_flash[type] do
+      msg -> {:ok, :plug_request_with_session, msg}
+    end
+  end
+
+  def plug_request_with_session(_) do
+    {:error, :plug_request_with_session}
+  end
 end

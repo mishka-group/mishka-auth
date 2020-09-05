@@ -28,8 +28,8 @@ defmodule MishkaAuth.Client.Users.ClientToken do
 
   @spec create_and_save_refresh_token(binary, map) ::
           {:ok, :insert_or_update_into_redis}
-          | {:ok, :access_token, any, any}
-          | {:ok, :save_token_into_redis, :create, any, any}
+          | {:ok, :access_token, binary, any}
+          | {:ok, :save_token_into_redis, :create, binary, any}
 
   def create_and_save_refresh_token(id, params \\ %{}) do
     encode_and_sign_token(id, params, MishkaAuth.get_config_info(:user_refresh_token_expire_time))
@@ -41,7 +41,8 @@ defmodule MishkaAuth.Client.Users.ClientToken do
 
   def refresh_token(token, time) do
     case MishkaAuth.Guardian.refresh(token, ttl: {time, :minutes}) do
-      {:ok, _old_token_and_clime, {new_token, new_clime}} -> {:ok, :refresh_token, new_token, new_clime}
+      {:ok, _old_token_and_clime, {new_token, new_clime}} ->
+        {:ok, :refresh_token, new_token, new_clime}
       _ -> {:error, :refresh_token}
     end
   end
