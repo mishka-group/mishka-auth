@@ -334,9 +334,10 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     end
   end
 
+
   @spec check_password_user_and_password(username(), password(), :email | :username) ::
           {:error, :check_password_user_and_password, :email | :username}
-          | {:ok, :check_password_with_username, :email | :username, Ecto.Schema.t()}
+          | {:ok, :check_password_user_and_password, :email | :username, Ecto.Schema.t()}
   def check_password_user_and_password(username, password, :username) do
     with {:ok, :find_user_with_username, user_info} <- find_user_with_username(username),
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
