@@ -4,7 +4,7 @@ defmodule MishkaAuthTest.System.RedisClientTest do
   use MishkaAuthWeb.ConnCase
 
 
-  describe "Happy | System Extra (▰˘◡˘▰)" do
+  describe "Happy | System Redis (▰˘◡˘▰)" do
     test "insert or update into redis" do
       {:ok, :insert_or_update_into_redis} = assert RedisClient.insert_or_update_into_redis("test", "test", %{test: "test"}, 2000)
     end
@@ -66,7 +66,7 @@ defmodule MishkaAuthTest.System.RedisClientTest do
 
 
 
-  describe "UnHappy | System Extra ಠ╭╮ಠ" do
+  describe "UnHappy | System Redis ಠ╭╮ಠ" do
     test "convert output of get all fields of record redis" do
       {:error, :get_all_fields_of_record_redis, "The data concerned doesn't exist"} = assert RedisClient.convert_output_of_get_all_fields_of_record_redis([])
     end
