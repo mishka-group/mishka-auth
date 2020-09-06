@@ -29,6 +29,7 @@ defmodule MishkaAuth.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:phoenix, "~> 1.5"},
       {:plug, "~> 1.10"},
       {:guardian, "~> 2.1"},
       {:oauth2, "~> 2.0"},
