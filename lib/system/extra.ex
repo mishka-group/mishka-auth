@@ -96,7 +96,7 @@ defmodule MishkaAuth.Extra do
     end
   end
 
-  def plug_request_with_session(_) do
+  def plug_request_with_session(_, _type) do
     {:error, :plug_request_with_session}
   end
 end
