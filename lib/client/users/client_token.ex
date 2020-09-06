@@ -1,8 +1,11 @@
 defmodule MishkaAuth.Client.Users.ClientToken do
 
-  @type token() :: String.t()
+  @type token() :: String.t() | binary
   @type params() :: map()
 
+
+  @spec create_and_update_current_token(binary, map) ::
+          {:ok, :create_and_update_current_token, binary}
 
   def create_and_update_current_token(id, params \\ %{}) do
     {:ok, token, _clime} = encode_and_sign_token(id, params, MishkaAuth.get_config_info(:user_jwt_token_expire_time))
@@ -12,39 +15,70 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     {:ok, :create_and_update_current_token, token}
   end
 
+  @spec create_and_save_access_token(binary, map) ::
+          {:ok, :insert_or_update_into_redis}
+          | {:ok, :access_token, any, any}
+          | {:ok, :save_token_into_redis, :create, any, any}
+
   def create_and_save_access_token(id, params \\ %{}) do
     {:ok, token, clime} = encode_and_sign_token(id, params, MishkaAuth.get_config_info(:user_access_token_expire_time))
     {:ok, :access_token, token, clime}
     |> save_token_into_redis(id, MishkaAuth.get_config_info(:user_access_token_expire_time))
   end
 
+  @spec create_and_save_refresh_token(binary, map) ::
+          {:ok, :insert_or_update_into_redis}
+          | {:ok, :access_token, binary, any}
+          | {:ok, :save_token_into_redis, :create, binary, any}
+
   def create_and_save_refresh_token(id, params \\ %{}) do
     encode_and_sign_token(id, params, MishkaAuth.get_config_info(:user_refresh_token_expire_time))
     |> save_token_into_redis(id, MishkaAuth.get_config_info(:user_refresh_token_expire_time))
   end
 
+  @spec refresh_token(binary, any) ::
+          {:error, :refresh_token} | {:ok, :refresh_token, binary, map}
+
   def refresh_token(token, time) do
     case MishkaAuth.Guardian.refresh(token, ttl: {time, :minutes}) do
-      {:ok, _old_token_and_clime, {new_token, new_clime}} -> {:ok, :refresh_token, new_token, new_clime}
+      {:ok, _old_token_and_clime, {new_token, new_clime}} ->
+        {:ok, :refresh_token, new_token, new_clime}
       _ -> {:error, :refresh_token}
     end
   end
+
+  @spec create_access_token(binary) :: {:error, any} | {:ok, binary, map}
 
   def create_access_token(id) do
     encode_and_sign_token(id, %{}, MishkaAuth.get_config_info(:user_access_token_expire_time))
   end
 
+  @spec encode_and_sign_token(binary, map, any) :: {:error, any} | {:ok, binary, map}
+
   def encode_and_sign_token(id, params, time) do
     MishkaAuth.Guardian.encode_and_sign(%{id: "#{id}"}, Map.merge(%{some: "claim"}, params), token_type: "access",ttl: {time, :seconds})
   end
+
+  @spec verify_token(binary) :: {:error, any} | {:ok, map}
 
   def verify_token(token) do
     MishkaAuth.Guardian.decode_and_verify(token)
   end
 
+  @spec get_id_from_jwt_climes(nil | maybe_improper_list | map) :: {:ok, %{id: any}}
+
   def get_id_from_jwt_climes(climes) do
     MishkaAuth.Guardian.resource_from_claims(climes)
   end
+
+  @spec save_token_into_redis(
+          {:ok, any, any} | {:ok, :access_token | :refresh_token, token(), any},
+          binary,
+          any
+        ) ::
+          {:ok, :insert_or_update_into_redis}
+          | {:ok, :access_token, token(), any}
+          | {:ok, :save_token_into_redis, :create, token(), any}
 
   def save_token_into_redis({:ok, :refresh_token, new_token, _new_clime}, id, time) do
     MishkaAuth.RedisClient.insert_or_update_into_redis(MishkaAuth.get_config_info(:refresh_token_table), id, %{token: new_token}, time)
@@ -66,6 +100,9 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     {:ok, :save_token_into_redis, :create, user_token, clime}
   end
 
+  @spec valid_refresh_token(binary) ::
+          {:error, :valid_refresh_token} | {:ok, :valid_refresh_token, binary, map}
+
   def valid_refresh_token(token) do
     with {:ok, _def_name, _token, _token_table, id} <- get_and_verify_token_on_redis(token, MishkaAuth.get_config_info(:refresh_token_table)),
     {:ok, :refresh_token, new_token, new_clime} = refresh_token <- refresh_token(token, MishkaAuth.get_config_info(:user_refresh_token_expire_time)) do
@@ -79,6 +116,9 @@ defmodule MishkaAuth.Client.Users.ClientToken do
   end
 
 
+  @spec valid_user_token(binary) ::
+          {:error, :valid_user_token} | {:ok, :create_and_update_current_token, binary}
+
   def valid_user_token(token) do
     with {:ok, _def_name, _token, _token_table, user_id} <- get_and_verify_token_on_redis(token, MishkaAuth.get_config_info(:token_table)) do
        create_and_update_current_token(user_id)
@@ -87,6 +127,10 @@ defmodule MishkaAuth.Client.Users.ClientToken do
         {:error, :valid_user_token}
     end
   end
+
+  @spec verify_token(binary, any, :refresh_token) ::
+          {:error, :verify_token, :access_token | :refresh_token}
+          | {:ok, :verify_token, :refresh_token_and_access_token, binary}
 
   def verify_token(refresh_token, access_token, :refresh_token) do
     with  {:ok, :verify_token, :refresh_token, user_id} <- verify_token(refresh_token, :refresh_token),
@@ -102,6 +146,10 @@ defmodule MishkaAuth.Client.Users.ClientToken do
          {:error, :verify_token, :access_token}
      end
    end
+
+   @spec verify_token(binary, :access_token | :current_token | :refresh_token) ::
+           {:error, :verify_token, :access_token | :current_token | :refresh_token}
+           | {:ok, :verify_token, :access_token | :current_token | :refresh_token, binary}
 
    def verify_token(refresh_token, :refresh_token) do
      with {:ok, :get_and_verify_token_on_redis, _token, _token_table, user_id} <- get_and_verify_token_on_redis(refresh_token, MishkaAuth.get_config_info(:refresh_token_table)) do
@@ -138,6 +186,8 @@ defmodule MishkaAuth.Client.Users.ClientToken do
    end
 
 
+   @spec verify_and_update_token(Plug.Conn.t(), token(), token(), :refresh_token) :: Plug.Conn.t()
+
    def verify_and_update_token(conn, refresh_token, access_token, :refresh_token) do
     case verify_token(refresh_token, access_token, :refresh_token) do
       {:ok, :verify_token, :refresh_token_and_access_token, user_id} ->
@@ -149,6 +199,9 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     end
   end
 
+
+  @spec verify_and_update_token(Plug.Conn.t(), token(), :current_token | :refresh_token) ::
+          Plug.Conn.t()
 
   def verify_and_update_token(conn, refresh_token, :refresh_token) do
     case verify_token(refresh_token, :refresh_token) do
@@ -169,6 +222,10 @@ defmodule MishkaAuth.Client.Users.ClientToken do
         |> MishkaAuth.Helper.PhoenixConverter.session_redirect(MishkaAuth.get_config_info(:login_redirect), "Token expired. Please login.", :error)
     end
   end
+
+  @spec get_and_verify_token_on_redis(token(), String.t()) ::
+          {:error, :get_and_verify_token_on_redis}
+          | {:ok, :get_and_verify_token_on_redis, binary, binary, binary}
 
   def get_and_verify_token_on_redis(token, token_table) do
     with {:ok, claims} <- verify_token(token),
@@ -191,4 +248,28 @@ defmodule MishkaAuth.Client.Users.ClientToken do
     if token ===  redis_token, do: {:ok, :same_token_between_client_and_redis} , else: {:error, :same_token_between_client_and_redis}
   end
 
+
+  @spec delete_user_token(any, :access_token | :all_token | :refresh_token | :user_token) ::
+          [any]
+          | {:error, :get_all_fields_of_record_redis, <<_::256>>}
+          | {:ok, :delete_record_of_redis, <<_::168>>}
+
+  def delete_user_token(user_id, :refresh_token) do
+    MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(:refresh_token_table), user_id)
+  end
+
+  def delete_user_token(user_id, :access_token) do
+    MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(:access_token_table), user_id)
+  end
+
+  def delete_user_token(user_id, :user_token) do
+    MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(:token_table), user_id)
+  end
+
+  def delete_user_token(user_id, :all_token) do
+    [:refresh_token_table, :access_token_table, :token_table]
+    |> Enum.map(fn strategy ->
+      MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(strategy), user_id)
+    end)
+  end
 end

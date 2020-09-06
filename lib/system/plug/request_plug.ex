@@ -2,7 +2,12 @@ defmodule MishkaAuth.Plug.RequestPlug do
   import Plug.Conn
 
   @strategies ["current_token", "current_user", "refresh_token"]
+
+  @spec init(any) :: any
+
   def init(default), do: default
+
+  @spec call(Plug.Conn.t(), any) :: Plug.Conn.t()
 
   def call(conn, default) do
     conn

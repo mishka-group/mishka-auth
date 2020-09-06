@@ -1,5 +1,7 @@
 defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
+  import  Ecto.Query
+
   @type username() :: String.t()
   @type password() :: String.t()
   @type email() :: String.t()
@@ -16,7 +18,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
   alias MishkaAuth.Helper.Db
   alias MishkaAuth.Client.Users.ClientUserSchema
-#   alias MishkaAuth.Guardian
+
 
 
 
@@ -237,8 +239,10 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
          {:ok, :is_user_activated_with_id?, user_info}
     else
-      {:error, :find_user_with_user_id}     -> {:error, :is_user_activated_with_id?, :user_not_found}
-      {:error, :is_unconfirmed_email_nil}   -> {:error, :is_user_activated_with_id?, :user_not_activated}
+      {:error, :find_user_with_user_id}     ->
+        {:error, :is_user_activated_with_id?, :user_not_found}
+      {:error, :is_unconfirmed_email_nil}   ->
+        {:error, :is_user_activated_with_id?, :user_not_activated}
     end
   end
 
@@ -287,9 +291,11 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
       {:ok, :edit_user_password, user_update_info}
     else
-      {:error, :find_user_with_email} -> {:error, :edit_user_password, :user_not_found}
+      {:error, :find_user_with_email} ->
+        {:error, :edit_user_password, :user_not_found}
 
-      {:error, :update_user_password, changeset} -> {:error, :edit_user_password, :data_input_problem, changeset}
+      {:error, :update_user_password, changeset} ->
+        {:error, :edit_user_password, :data_input_problem, changeset}
     end
   end
 
@@ -310,7 +316,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
       {:ok, :edit_user_verified_email}
     else
-      {:error, :find_user_with_email} -> {:error, :edit_user_password, :user_not_found}
+      {:error, :find_user_with_email} ->
+        {:error, :edit_user_password, :user_not_found}
     end
   end
 
@@ -327,15 +334,16 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     end
   end
 
+
   @spec check_password_user_and_password(username(), password(), :email | :username) ::
           {:error, :check_password_user_and_password, :email | :username}
-          | {:ok, :check_password_with_username, :email | :username, Ecto.Schema.t()}
+          | {:ok, :check_password_user_and_password, :email | :username, Ecto.Schema.t()}
   def check_password_user_and_password(username, password, :username) do
     with {:ok, :find_user_with_username, user_info} <- find_user_with_username(username),
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_with_username, :username, user_info}
+          {:ok, :check_password_user_and_password, :username, user_info}
     else
       _ ->
         {:error, :check_password_user_and_password, :username}
@@ -347,7 +355,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_with_username, :email, user_info}
+          {:ok, :check_password_user_and_password, :email, user_info}
     else
       _ ->
         {:error, :check_password_user_and_password, :email}
@@ -355,9 +363,15 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
 
-  def chack_password_not_null(pass) do
+  @spec chack_password_not_null(password()) ::
+          {:error, :chack_password_not_null} | {:ok, :chack_password_not_null}
+
+  defp chack_password_not_null(pass) do
     if pass == nil, do: {:error, :chack_password_not_null}, else: {:ok, :chack_password_not_null}
   end
+
+  @spec set_set_systematic_user_data(map, :direct | :social) :: map
+
   def set_set_systematic_user_data(user_params, :direct) do
     Map.merge(%{"unconfirmed_email" => user_params["email"]}, MishkaAuth.Extra.strong_params(user_params, @register_params))
   end
@@ -365,4 +379,37 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   def set_set_systematic_user_data(user_params, :social) do
     Map.merge(%{"unconfirmed_email" => nil, "status" => "active"}, MishkaAuth.Extra.strong_params(user_params, @register_params))
   end
+
+  def show_public_info_of_user(user_id, :user_id) do
+    query = from u in ClientUserSchema,
+    where: u.id == ^user_id,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email
+    }
+    case Db.repo.one(query) do
+      nil       -> {:error, :show_public_info_of_user, :user_id}
+      user_info  -> {:ok, :show_public_info_of_user, :user_id, user_info}
+    end
+  end
+
+  def show_public_info_of_user(user_email, :email) do
+    query = from u in ClientUserSchema,
+    where: u.email == ^user_email,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email
+    }
+    case Db.repo.one(query) do
+      nil       -> {:error, :show_public_info_of_user, :email}
+      user_info  -> {:ok, :show_public_info_of_user, :email, user_info}
+    end
+  end
+
 end

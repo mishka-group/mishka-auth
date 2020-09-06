@@ -23,8 +23,8 @@ defmodule MishkaAuth.Strategy do
 
 
   # inSite normal current user
-  @spec registered_user_routing(user_id(), Plug.Conn.t(), :current_user | :current_token | :refresh_token, auth_version()) ::
-          Plug.Conn.t()
+  @spec registered_user_routing(user_id(), Plug.Conn.t(), :current_user | :current_token | :refresh_token, auth_version()) :: Plug.Conn.t()
+
   def registered_user_routing(user_id, conn, :current_user, 2) do
     PhoenixConverter.store_session(:current_user, user_id, MishkaAuth.get_config_info(:user_redirect_path), conn, MishkaAuth.get_config_info(:authenticated_msg))
   end
@@ -65,6 +65,7 @@ defmodule MishkaAuth.Strategy do
 
 
   @spec none_registered_user_routing(Plug.Conn.t(), map(), user_id(), any(), :refresh_token | :current_user | :current_token) :: Plug.Conn.t()
+
   def none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, status, :refresh_token) do
     PhoenixConverter.render_json(conn, %{
       user_info: Map.drop(user_temporary_data, ["token", "uid", "provider"]),
@@ -84,6 +85,7 @@ defmodule MishkaAuth.Strategy do
 
 
   @spec failed_none_registered_user_routing(Plug.Conn.t(), map(), integer(), :refresh_token | :current_user | :current_token) :: Plug.Conn.t()
+
   def failed_none_registered_user_routing(conn, attrs, status, :refresh_token) do
     PhoenixConverter.render_json(conn, attrs, :error, status)
   end
@@ -98,6 +100,8 @@ defmodule MishkaAuth.Strategy do
 
 
 
+  @spec auth_error_strategy(Plug.Conn.t(), atom(), [any] | map, any) :: Plug.Conn.t()
+
   def auth_error_strategy(conn, strategy_type, errors, status) do
     case strategy_type do
       :refresh_token ->
@@ -107,6 +111,8 @@ defmodule MishkaAuth.Strategy do
         PhoenixConverter.session_redirect(conn, "/", error.message, :error)
     end
   end
+
+  @spec saving_user_info_and_indentities(Plug.Conn.t(), map(), user_id()) :: Plug.Conn.t()
 
   def saving_user_info_and_indentities(conn, user_temporary_data, temporary_user_uniq_id) do
     with  true <- MishkaAuth.get_config_info(:automatic_registration),

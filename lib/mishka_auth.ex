@@ -63,6 +63,8 @@ defmodule MishkaAuth do
     HandleSocialRequest.back_request(auth, status, Ecto.UUID.generate(), strategy, conn)
   end
 
+
+  # Pass pattern
   @spec verify_token(binary, binary, :refresh_token) ::
           {:error, :verify_token, :access_token | :refresh_token}
           | {:ok, :verify_token, :refresh_token_and_access_token, binary}
@@ -70,6 +72,8 @@ defmodule MishkaAuth do
     ClientToken.verify_token(refresh_token, access_token, :refresh_token)
   end
 
+
+  # Pass pattern
   @spec verify_token(binary, :access_token | :current_token | :refresh_token) ::
           {:error, :verify_token, :access_token | :current_token | :refresh_token}
           | {:ok, :verify_token, :access_token | :current_token | :refresh_token, binary}
@@ -86,11 +90,16 @@ defmodule MishkaAuth do
   end
 
 
+
+  # Pass Plug.Conn
   @spec verify_and_update_token(Plug.Conn.t(), binary, any, :refresh_token) :: Plug.Conn.t()
   def verify_and_update_token(conn, refresh_token, access_token, :refresh_token) do
     ClientToken.verify_and_update_token(conn, refresh_token, access_token, :refresh_token)
   end
 
+
+
+  # Pass Plug.Conn
   @spec verify_and_update_token(Plug.Conn.t(), binary, :current_token | :refresh_token) ::
           Plug.Conn.t()
   def verify_and_update_token(conn, refresh_token, :refresh_token) do
@@ -101,6 +110,9 @@ defmodule MishkaAuth do
     ClientToken.verify_and_update_token(conn, current_token, :current_token)
   end
 
+
+
+  # Pass Plug.Conn
   @spec verify_and_update_current_token_with_getting_session(Plug.Conn.t(), :current_token) ::
           Plug.Conn.t()
   def verify_and_update_current_token_with_getting_session(conn, :current_token) do
@@ -113,5 +125,14 @@ defmodule MishkaAuth do
         MishkaAuth.Helper.PhoenixConverter.drop_session(conn, :current_user)
         |> MishkaAuth.Helper.PhoenixConverter.session_redirect(get_config_info(:login_redirect), "Token expired. Please login.", :error)
     end
+  end
+
+  @spec revoke_token(any, :access_token | :all_token | :refresh_token | :user_token) ::
+          [any]
+          | {:error, :get_all_fields_of_record_redis, <<_::256>>}
+          | {:ok, :delete_record_of_redis, <<_::168>>}
+
+  def revoke_token(user_id, strategy) when strategy in [:refresh_token, :access_token, :user_token, :all_token] do
+    ClientToken.delete_user_token(user_id, strategy)
   end
 end
