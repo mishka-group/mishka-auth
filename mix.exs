@@ -12,7 +12,7 @@ defmodule MishkaAuth.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
-      name: "MishkaAuth",
+      name: "plug_mishka_auth",
       source_url: "https://github.com/mishka-group/mishka-auth",
       dialyzer: [plt_add_apps: [:mix]]
     ]
@@ -55,7 +55,7 @@ defmodule MishkaAuth.MixProject do
   defp package() do
     [
       # This option is only needed when you don't want to use the OTP application name
-      name: "MishkaAuth",
+      name: "plug_mishka_auth",
       # These are the default files included in the package
       files: ~w(lib .formatter.exs mix.exs README*),
       licenses: ["MIT"],
