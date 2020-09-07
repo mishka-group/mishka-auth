@@ -10,7 +10,7 @@ by adding `mishka_auth` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:mishka_auth, "~> 0.0.1"}
+    {:mishka_auth, "~> 0.0.1", hex: :plug_mishka_auth}
   ]
 end
 ```
