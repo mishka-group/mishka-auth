@@ -49,7 +49,7 @@ defmodule MishkaAuth.MixProject do
   end
 
   defp description() do
-    "A few sentences (a paragraph) describing the project."
+    "Easy to install Auth system with social integration just in 6 steps on Elixir Phoenix"
   end
 
   defp package() do

@@ -3,6 +3,18 @@ defmodule MishkaAuthTest.Client.ClientTokenTest do
   use MishkaAuthWeb.ConnCase
 
   alias MishkaAuth.Client.Users.ClientToken
+  alias MishkaAuth.Client.Users.ClientUserQuery
+
+  @true_user_parameters %{
+    name: "username#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    lastname: "userlastname#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    username: "usernameuniq#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    email: "user_name_#{String.downcase(MishkaAuth.Extra.randstring(8))}@gmail.com",
+    password: "pass1Test#{MishkaAuth.Extra.randstring(10)}",
+    status: 1,
+    unconfirmed_email: "user_name_#{String.downcase(MishkaAuth.Extra.randstring(8))}@gmail.com",
+  }
+
 
   describe "Happy | client User Token (▰˘◡˘▰)" do
     test "create and update current token" do
@@ -181,6 +193,39 @@ defmodule MishkaAuthTest.Client.ClientTokenTest do
         {:ok, :delete_record_of_redis, "The record is deleted"}
       ] = assert ClientToken.delete_user_token(id, :all_token)
     end
+
+    test "find_user_token(user_id, :user_token)" do
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+
+      {:ok, :create_and_update_current_token, _token} = assert ClientToken.create_and_update_current_token(user_info.id, %{})
+
+      {:ok, :find_user_token, :user_token, _user_id, _record} = assert ClientToken.find_user_token(user_info.id, :user_token)
+    end
+
+    test "find_user_token(user_id, :access_token)" do
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+
+      {:ok, :access_token, _access_token, _clime} = assert ClientToken.create_and_save_access_token(user_info.id, %{})
+
+      {:ok, :find_user_token, :access_token, _user_id, _record} = assert ClientToken.find_user_token(user_info.id, :access_token)
+    end
+
+
+    test "find_user_token(user_id, :refresh_token)" do
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+
+      {:ok, :save_token_into_redis, :create, _user_token, _clime} = assert ClientToken.create_and_save_refresh_token(user_info.id, %{})
+
+      {:ok, :find_user_token, :refresh_token, _user_id, _record} = assert ClientToken.find_user_token(user_info.id, :refresh_token)
+    end
+
+    test "find_user_token(user_id, :all_token)" do
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+
+      {:ok, :create_and_update_current_token, _token} = assert ClientToken.create_and_update_current_token(user_info.id, %{})
+
+      [{:ok, :find_user_token, :user_token, _user_id, _user_token}] = assert ClientToken.find_user_token(user_info.id, :all_token)
+    end
   end
 
 
@@ -271,6 +316,22 @@ defmodule MishkaAuthTest.Client.ClientTokenTest do
         {:error, :get_all_fields_of_record_redis, "The data concerned doesn't exist"},
         {:error, :get_all_fields_of_record_redis, "The data concerned doesn't exist"}
       ] = assert ClientToken.delete_user_token(Ecto.UUID.generate, :all_token)
+    end
+
+    test "find_user_token(user_id, :user_token)" do
+      {:error, :find_user_token, :user_token} = assert ClientToken.find_user_token(Ecto.UUID.generate, :user_token)
+    end
+
+    test "find_user_token(user_id, :access_token)" do
+      {:error, :find_user_token, :access_token} = assert ClientToken.find_user_token(Ecto.UUID.generate, :access_token)
+    end
+
+    test "find_user_token(user_id, :refresh_token)" do
+      {:error, :find_user_token, :refresh_token} = assert ClientToken.find_user_token(Ecto.UUID.generate, :refresh_token)
+    end
+
+    test "find_user_token(user_id, :all_token)" do
+      [] = assert ClientToken.find_user_token(Ecto.UUID.generate, :all_token)
     end
   end
 end

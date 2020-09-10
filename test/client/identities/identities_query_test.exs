@@ -8,11 +8,11 @@ defmodule MishkaAuthTest.Client.IdentitiesQueryTest do
   end
 
   @true_user_parameters %{
-    name: "username#{MishkaAuth.Extra.randstring(8)}",
-    lastname: "userlastname#{MishkaAuth.Extra.randstring(8)}",
-    username: "usernameuniq#{MishkaAuth.Extra.randstring(8)}",
-    email: "user_name_#{MishkaAuth.Extra.randstring(8)}@gmail.com",
-    password: "#{MishkaAuth.Extra.randstring(10)}",
+    name: "username#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    lastname: "userlastname#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    username: "usernameuniq#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    email: "user_name_#{String.downcase(MishkaAuth.Extra.randstring(8))}@gmail.com",
+    password: "passTe1st#{MishkaAuth.Extra.randstring(10)}",
     status: 1,
   }
 
