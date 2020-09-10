@@ -272,4 +272,51 @@ defmodule MishkaAuth.Client.Users.ClientToken do
       MishkaAuth.RedisClient.delete_record_of_redis(MishkaAuth.get_config_info(strategy), user_id)
     end)
   end
+
+  @spec find_user_token(any, :access_token | :all_token | :refresh_token | :user_token) ::
+          [any]
+          | {:error, :find_user_token, :access_token | :refresh_token | :user_token}
+          | {:ok, :find_user_token, :access_token | :refresh_token | :user_token, binary, map()}
+
+  def find_user_token(user_id, :refresh_token) do
+    with {:ok, :get_all_fields_of_record_redis, record} <- MishkaAuth.RedisClient.convert_output_of_get_all_fields_of_record_redis(MishkaAuth.RedisClient.get_all_fields_of_record_redis(MishkaAuth.get_config_info(:refresh_token_table), user_id)) do
+
+      {:ok, :find_user_token, :refresh_token, user_id, record}
+    else
+      _ ->
+        {:error, :find_user_token, :refresh_token}
+    end
+  end
+
+  def find_user_token(user_id, :access_token) do
+    with {:ok, :get_all_fields_of_record_redis, record} <- MishkaAuth.RedisClient.convert_output_of_get_all_fields_of_record_redis(MishkaAuth.RedisClient.get_all_fields_of_record_redis(MishkaAuth.get_config_info(:access_token_table), user_id)) do
+
+      {:ok, :find_user_token, :access_token, user_id, record}
+    else
+      _ ->
+        {:error, :find_user_token, :access_token}
+    end
+  end
+
+  def find_user_token(user_id, :user_token) do
+    with {:ok, :get_all_fields_of_record_redis, record} <- MishkaAuth.RedisClient.convert_output_of_get_all_fields_of_record_redis(MishkaAuth.RedisClient.get_all_fields_of_record_redis(MishkaAuth.get_config_info(:token_table), user_id)) do
+
+      {:ok, :find_user_token, :user_token, user_id, record}
+    else
+      _ ->
+        {:error, :find_user_token, :user_token}
+    end
+  end
+
+  def find_user_token(user_id, :all_token) do
+    [:refresh_token, :access_token, :user_token]
+    |> Enum.map(fn strategy ->
+      case find_user_token(user_id, strategy) do
+        {:ok, :find_user_token, strategy, user_id, record} ->
+          {:ok, :find_user_token, strategy, user_id, MishkaAuth.Extra.list_to_map(record)}
+        _ -> []
+      end
+    end)
+    |> Enum.reject(fn x -> x == [] end)
+  end
 end

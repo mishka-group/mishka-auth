@@ -7,13 +7,13 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
   end
 
   @true_user_parameters %{
-    name: "username#{MishkaAuth.Extra.randstring(8)}",
-    lastname: "userlastname#{MishkaAuth.Extra.randstring(8)}",
-    username: "usernameuniq#{MishkaAuth.Extra.randstring(8)}",
-    email: "user_name_#{MishkaAuth.Extra.randstring(8)}@gmail.com",
-    password: "#{MishkaAuth.Extra.randstring(10)}",
+    name: "username#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    lastname: "userlastname#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    username: "usernameuniq#{String.downcase(MishkaAuth.Extra.randstring(8))}",
+    email: "user_name_#{String.downcase(MishkaAuth.Extra.randstring(8))}@gmail.com",
+    password: "pass1Test#{MishkaAuth.Extra.randstring(10)}",
     status: 1,
-    unconfirmed_email: "user_name_#{MishkaAuth.Extra.randstring(8)}@gmail.com"
+    unconfirmed_email: "user_name_#{String.downcase(MishkaAuth.Extra.randstring(8))}@gmail.com",
   }
 
 
@@ -61,7 +61,7 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
     test "edit user password" do
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
-      {:ok, :edit_user_password, _user_update_info} = assert ClientUserQuery.edit_user_password(create_user_info.email, %{password: "#{MishkaAuth.Extra.randstring(10)}"})
+      {:ok, :edit_user_password, _user_update_info} = assert ClientUserQuery.edit_user_password(create_user_info.email, %{password: "pass1Test#{MishkaAuth.Extra.randstring(10)}"})
     end
 
     test "edit user verified email" do
@@ -70,19 +70,19 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     end
 
     test "valid password" do
-      password = "#{MishkaAuth.Extra.randstring(10)}"
+      password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters |> Map.merge(%{password: password}))
       {:ok, :valid_password} = assert ClientUserQuery.valid_password(create_user_info, password)
     end
 
     test "check password user and password -- (:username)" do
-      password = "#{MishkaAuth.Extra.randstring(10)}"
+      password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters |> Map.merge(%{password: password}))
       {:ok, :check_password_user_and_password, :username, _user_info} = assert ClientUserQuery.check_password_user_and_password(create_user_info.username, password, :username)
     end
 
     test "check password user and password -- (:email)" do
-      password = "#{MishkaAuth.Extra.randstring(10)}"
+      password = "passT1est#{MishkaAuth.Extra.randstring(10)}"
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters |> Map.merge(%{password: password}))
       {:ok, :check_password_user_and_password, :email, _user_info} = assert ClientUserQuery.check_password_user_and_password(create_user_info.email, password, :email)
     end
