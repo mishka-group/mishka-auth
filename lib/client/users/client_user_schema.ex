@@ -30,20 +30,20 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
    def changeset(struct, params \\ %{}) do
      struct
      |> cast(params, [:name, :lastname, :username, :email, :password_hash, :password, :status, :unconfirmed_email])
-     |> validate_required([:name, :username, :email, :status], message: "فیلد مذکور نمی تواند خالی باشد.")
-     |> validate_length(:name, min: 3, max: 20, message: "نام شما باید بین ۳ الی ۲۰ کاراکتر باشد.")
-     |> validate_length(:lastname, min: 3, max: 20, message: "نام خانوادگی شما باید بین ۳ الی ۲۰ کارکتر باشد.")
-     |> validate_length(:password, min: 8, max: 100, message: "پسورد شما باید حداقل ۸ کاراکتر باشد و حداکثر ۲۰۰ لطفا پسورد مناسبی انتخاب کنید.")
-     |> validate_length(:username, min: 3, max: 20, message: "نام کاربری شما باید بین ۳ الی ۲۰ کارکتر باشد.")
-     |> validate_length(:email, min: 8, max: 50, message: "تعداد کارکتر های ایمیل باید بین ۸ تا ۵۰ عدد باشد.")
+     |> validate_required([:name, :username, :email, :status], message: "can't be blank")
+     |> validate_length(:name, min: 3, max: 20, message: "minimum 3 characters and maximum 20 characters")
+     |> validate_length(:lastname, min: 3, max: 20, message: "minimum 3 characters and maximum 20 characters")
+     |> validate_length(:password, min: 8, max: 100, message: "minimum 8 characters and maximum 100 characters")
+     |> validate_length(:username, min: 3, max: 20, message: "minimum 3 characters and maximum 20 characters")
+     |> validate_length(:email, min: 8, max: 50, message: "minimum 8 characters and maximum 50 characters")
 
      |> SanitizeStrategy.changeset_input_validation(MishkaAuth.get_config_info(:input_validation_status))
 
 
 
-     |> unique_constraint(:unconfirmed_email, name: :index_on_users_verified_email, message: "ایمیل درخواست تمدید از قبل وجود دارد.")
-     |> unique_constraint(:username, name: :index_on_users_username, message: "نام کاربری وارد شده از قبل وجود دارد.")
-     |> unique_constraint(:email, name: :index_on_users_email, message: "ایمیل وارد شده از قبل وجود دارد.")
+     |> unique_constraint(:unconfirmed_email, name: :index_on_users_verified_email, message: "this email has already been taken.")
+     |> unique_constraint(:username, name: :index_on_users_username, message: "this username has already been taken.")
+     |> unique_constraint(:email, name: :index_on_users_email, message: "this email has already been taken.")
      |> hash_password
    end
 
@@ -55,7 +55,7 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
    def unconfirmed_email_changeset(struct, params \\ %{}) do
      struct
      |> cast(params, [:unconfirmed_email])
-     |> validate_required([:unconfirmed_email], message: "متاسفانه ایمیل فعال سازی ارسال نگردیده است.")
+     |> validate_required([:unconfirmed_email], message: "Email can't be blank")
    end
 
    @spec change_password_changeset(
@@ -66,8 +66,8 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
    def change_password_changeset(struct, params \\ %{}) do
      struct
      |> cast(params, [:password])
-     |> validate_required([:password], message: "متاسفانه پارامتر پسورد وارد نشده است.")
-     |> validate_length(:password, min: 8, max: 100, message: "پسورد شما باید حداقل ۸ کاراکتر باشد و حداکثر ۲۰۰ لطفا پسورد مناسبی انتخاب کنید.")
+     |> validate_required([:password], message: "Password can't be blank")
+     |> validate_length(:password, min: 8, max: 100, message: "minimum 8 characters and maximum 100 characters")
      |> hash_password
    end
 
