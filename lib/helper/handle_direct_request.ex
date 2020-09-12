@@ -27,7 +27,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
   @spec login_with_username(atom(), Plug.Conn.t(), username(), password()) :: Plug.Conn.t()
 
   def login_with_username(:refresh_token, conn, username, password) do
-    with {:ok, :check_password_user_and_password, :username, user_info} <- ClientUserQuery.check_password_user_and_password(username, password, :username) do
+    with {:ok, :check_user_and_password, :username, user_info} <- ClientUserQuery.check_user_and_password(username, password, :username) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :refresh_token, 2)
     else
       _ ->
@@ -37,7 +37,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
 
 
   def login_with_username(:current_token, conn, username, password) do
-    with {:ok, :check_password_user_and_password, :username, user_info} <- ClientUserQuery.check_password_user_and_password(username, password, :username) do
+    with {:ok, :check_user_and_password, :username, user_info} <- ClientUserQuery.check_user_and_password(username, password, :username) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :current_token, 2)
     else
       _ ->
@@ -47,7 +47,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
 
 
   def login_with_username(:current_user, conn, username, password) do
-    with {:ok, :check_password_user_and_password, :username, user_info} <- ClientUserQuery.check_password_user_and_password(username, password, :username) do
+    with {:ok, :check_user_and_password, :username, user_info} <- ClientUserQuery.check_user_and_password(username, password, :username) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :current_user, 2)
     else
       _ ->
@@ -65,7 +65,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
   @spec login_with_email(atom(), Plug.Conn.t(), email(), password()) :: Plug.Conn.t()
 
   def login_with_email(:refresh_token, conn, email, password) do
-    with {:ok, :check_password_user_and_password, :email, user_info} <- ClientUserQuery.check_password_user_and_password(email, password, :email) do
+    with {:ok, :check_user_and_password, :email, user_info} <- ClientUserQuery.check_user_and_password(email, password, :email) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :refresh_token, 2)
     else
       _ ->
@@ -75,7 +75,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
 
 
   def login_with_email(:current_token, conn, email, password) do
-    with {:ok, :check_password_user_and_password, :email, user_info} <- ClientUserQuery.check_password_user_and_password(email, password, :email) do
+    with {:ok, :check_user_and_password, :email, user_info} <- ClientUserQuery.check_user_and_password(email, password, :email) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :current_token, 2)
     else
       _ ->
@@ -85,7 +85,7 @@ defmodule MishkaAuth.Helper.HandleDirectRequest do
 
 
   def login_with_email(:current_user, conn, email, password) do
-    with {:ok, :check_password_user_and_password, :email, user_info} <- ClientUserQuery.check_password_user_and_password(email, password, :email) do
+    with {:ok, :check_user_and_password, :email, user_info} <- ClientUserQuery.check_user_and_password(email, password, :email) do
       MishkaAuth.Strategy.registered_user_routing(user_info.id, conn, :current_user, 2)
     else
       _ ->

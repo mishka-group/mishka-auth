@@ -300,6 +300,15 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
 
+  def edit_user_password_with_user_id(user_info, attrs) do
+    with {:ok, :update_user_password, user_update_info} <- update_user_password(user_info, attrs) do
+
+      {:ok, :edit_user_password_with_user_id, user_update_info}
+    else
+      {:error, :update_user_password, changeset} ->
+        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset}
+    end
+  end
 
 
   @spec edit_user_verified_email(email()) ::
@@ -335,33 +344,55 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
 
-  @spec check_password_user_and_password(username(), password(), :email | :username) ::
-          {:error, :check_password_user_and_password, :email | :username}
-          | {:ok, :check_password_user_and_password, :email | :username, Ecto.Schema.t()}
-  def check_password_user_and_password(username, password, :username) do
+
+  @spec check_user_and_password(binary, any, :email | :user_id | :username) ::
+          {:error, :check_user_and_password,
+           :current_password | :email | :null_password | :user_not_found | :username}
+          | {:ok, :check_user_and_password, :email | :user_id | :username, Ecto.Schema.t()}
+
+  def check_user_and_password(username, password, :username) do
     with {:ok, :find_user_with_username, user_info} <- find_user_with_username(username),
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_user_and_password, :username, user_info}
+          {:ok, :check_user_and_password, :username, user_info}
     else
       _ ->
-        {:error, :check_password_user_and_password, :username}
+        {:error, :check_user_and_password, :username}
     end
   end
 
-  def check_password_user_and_password(email, password, :email) do
+  def check_user_and_password(email, password, :email) do
     with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email),
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_user_and_password, :email, user_info}
+          {:ok, :check_user_and_password, :email, user_info}
     else
       _ ->
-        {:error, :check_password_user_and_password, :email}
+        {:error, :check_user_and_password, :email}
     end
   end
 
+  def check_user_and_password(user_id, password, :user_id) do
+    with {:ok, :find_user_with_user_id, user_info} <- find_user_with_user_id(user_id),
+         {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
+         {:ok, :valid_password} <- valid_password(user_info, password) do
+
+          {:ok, :check_user_and_password, :user_id, user_info}
+    else
+      {:error, :find_user_with_user_id} ->
+        {:error, :check_user_and_password, :user_not_found}
+
+      {:error, :chack_password_not_null} ->
+        {:error, :check_user_and_password, :null_password}
+
+      {:error, :valid_password} ->
+        {:error, :check_user_and_password, :current_password}
+      _ ->
+        {:error, :check_user_and_password, :user_id}
+    end
+  end
 
   @spec chack_password_not_null(password()) ::
           {:error, :chack_password_not_null} | {:ok, :chack_password_not_null}
@@ -409,6 +440,37 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     case Db.repo.one(query) do
       nil       -> {:error, :show_public_info_of_user, :email}
       user_info  -> {:ok, :show_public_info_of_user, :email, user_info}
+    end
+  end
+
+  @spec edit_user_password_with_user_id(binary, password(), password()) ::
+          {:error, :edit_user_password_with_user_id,
+           :current_password | :null_password | :user_not_found}
+          | {:ok, :edit_user_password_with_user_id, Ecto.Schema.t()}
+          | {:error, :edit_user_password_with_user_id, :data_input_problem, Ecto.Changeset.t()}
+
+  def edit_user_password_with_user_id(user_id, old_password, new_password) do
+    with {:ok, :check_user_and_password, :user_id, user_info} <- check_user_and_password(user_id, old_password, :user_id),
+        {:ok, :edit_user_password_with_user_id, user_update_info} <- edit_user_password_with_user_id(user_info, %{password: new_password})
+     do
+
+      {:ok, :edit_user_password_with_user_id, user_update_info}
+
+    else
+      {:error, :check_user_and_password, :user_not_found} ->
+        {:error, :edit_user_password_with_user_id, :user_not_found}
+
+      {:error, :check_user_and_password, :null_password} ->
+        {:error, :edit_user_password_with_user_id, :null_password}
+
+      {:error, :check_user_and_password, :current_password} ->
+        {:error, :edit_user_password_with_user_id, :current_password}
+
+      {:error, :check_user_and_password, :user_id} ->
+        {:error, :edit_user_password_with_user_id, :unknown_error}
+
+      {:error, :edit_user_password_with_user_id, :data_input_problem, changeset} ->
+        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset}
     end
   end
 

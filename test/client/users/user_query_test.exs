@@ -78,13 +78,13 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     test "check password user and password -- (:username)" do
       password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters |> Map.merge(%{password: password}))
-      {:ok, :check_password_user_and_password, :username, _user_info} = assert ClientUserQuery.check_password_user_and_password(create_user_info.username, password, :username)
+      {:ok, :check_user_and_password, :username, _user_info} = assert ClientUserQuery.check_user_and_password(create_user_info.username, password, :username)
     end
 
     test "check password user and password -- (:email)" do
       password = "passT1est#{MishkaAuth.Extra.randstring(10)}"
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters |> Map.merge(%{password: password}))
-      {:ok, :check_password_user_and_password, :email, _user_info} = assert ClientUserQuery.check_password_user_and_password(create_user_info.email, password, :email)
+      {:ok, :check_user_and_password, :email, _user_info} = assert ClientUserQuery.check_user_and_password(create_user_info.email, password, :email)
     end
 
     test "show public info of user(user_id, :user_id)" do
@@ -95,6 +95,15 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     test "show public info of user(email, :email)" do
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
       {:ok, :show_public_info_of_user, :email, _user_info} = assert ClientUserQuery.show_public_info_of_user(create_user_info.email, :email)
+    end
+
+    test "edit user password with user id (user_info.id, old_password, new_password)" do
+      password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.merge(@true_user_parameters, %{password: password}))
+
+      {:ok, :edit_user_password_with_user_id, _user_update_info} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, password, new_password)
     end
   end
 
@@ -182,13 +191,13 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
     test "check password user and password (:username)" do
       {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
-      {:error, :check_password_user_and_password, :username} = assert ClientUserQuery.check_password_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :username)
+      {:error, :check_user_and_password, :username} = assert ClientUserQuery.check_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :username)
     end
 
     test "check password user and password (:email)" do
       {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
 
-      {:error, :check_password_user_and_password, :email} = assert ClientUserQuery.check_password_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :email)
+      {:error, :check_user_and_password, :email} = assert ClientUserQuery.check_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :email)
     end
 
     test "show public info of user(user_id, :user_id)" do
@@ -197,6 +206,22 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
     test "show public info of user(user_id, :email)" do
       {:error, :show_public_info_of_user, :email} = assert ClientUserQuery.show_public_info_of_user("email@email.com", :email)
+    end
+
+    test "edit user password with user id (user not found)" do
+      password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.merge(@true_user_parameters, %{password: password}))
+      {:ok, :delete_user, _struct} = assert ClientUserQuery.delete_user(user_info.id)
+
+      {:error, :edit_user_password_with_user_id, :user_not_found} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, password, new_password)
+    end
+
+    test "edit user password with user id (current password)" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+
+      {:error, :edit_user_password_with_user_id, :current_password} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, new_password, new_password)
     end
   end
 end
