@@ -14,15 +14,11 @@ For this purpose, to prevent the login section of each project from being create
 
 The goal of this project is to facilitate the implementation of an “auth” system and in the future access levels for elixir users who want to work on Phoenix. 
 
-Creating a migration database with a task
-
-Controller implementation with a few simple plug only on call
-
-Implement social networks for registration - extract basic and login information
-
-Implement three strategies (user ID session - token session - and token refresh for external apps)
-
-Implement direct registration and login
+- Creating a migration database with a task
+- Controller implementation with a few simple plug only on call
+- Implement social networks for registration - extract basic and login information
+- Implement three strategies (user ID session - token session - and token refresh for external apps)
+- Implement direct registration and login
 
  
 
@@ -30,7 +26,7 @@ Are among the items that can be mentioned in this plugin. It needs to be pointed
 
  
 
-*It should also be noted that if you do not even want to use this plugin fully, it can still be a help to implement your personal system because of the configuration of several important and popular plugins in Elixir in the structure of a plugin.*
+> It should also be noted that if you do not even want to use this plugin fully, it can still be a help to implement your personal system because of the configuration of several important and popular plugins in Elixir in the structure of a plugin.
 
  
 
@@ -44,7 +40,7 @@ Therefore, in the future, all my efforts will be in developing this system as a 
 
  
 
-One of the top priorities in the future is to build a version of the plugin with minimal external dependency. For example, instead of PostGress, the Run Time Erlang database may be used, and it is possible to use the Elixir itself instead of Redis. This is very important for testing as well as for people with limited resources, and I personally understand this need and am researching and implementing it.
+> One of the top priorities in the future is to build a version of the plugin with minimal external dependency. For example, instead of PostGress, the Run Time Erlang database may be used, and it is possible to use the Elixir itself instead of Redis. This is very important for testing as well as for people with limited resources, and I personally understand this need and am researching and implementing it.
 
  
 
@@ -101,7 +97,7 @@ For the initial testing of the current two social networks, Google and GiteHub, 
 If you do not want to use social networks or you want to give the user more choice, it is still enough to create a simple  **html**  form and all the rest is just calling a function.
 
 
-Due to the use of tokens in most systems for total deletion or separately based on your desired strategies, a few simple functions have been created that will be introduced to you in the following.
+> Due to the use of tokens in most systems for total deletion or separately based on your desired strategies, a few simple functions have been created that will be introduced to you in the following.
 
  
 
@@ -285,7 +281,7 @@ From above, they are as follows:
 
  
 
-90% of all the work that had to be done was done.
+> 90% of all the work that had to be done was done.
 
  
 
