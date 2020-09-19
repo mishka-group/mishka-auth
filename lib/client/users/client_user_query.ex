@@ -501,7 +501,6 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   @spec delete_password(data_uuid()) ::
           {:error, :delete_password, :null_password | :user_not_found}
           | {:ok, :delete_password, Ecto.Schema.t()}
-          | {:error, :delete_password, :data_input_problem, Ecto.Changeset.t()}
 
   def delete_password(user_id) do
     with {:ok, :find_user_with_user_id, user_info} <- find_user_with_user_id(user_id),
@@ -519,9 +518,6 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
       {:error, :chack_password_not_null} ->
         {:error, :delete_password, :null_password}
-
-        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset} ->
-        {:error, :delete_password, :data_input_problem, changeset}
     end
   end
 
