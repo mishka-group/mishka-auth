@@ -105,6 +105,18 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
       {:ok, :edit_user_password_with_user_id, _user_update_info} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, password, new_password)
     end
+
+    test "add password" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.drop(@true_user_parameters, [:password]))
+      {:ok, :add_password, _user_update_info} = assert ClientUserQuery.add_password(user_info.id, new_password)
+    end
+
+    test "delete password" do
+      {:ok, :add_user, add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:ok, :delete_password, changed_user} = assert ClientUserQuery.delete_password(add_user_info.id)
+      {:error, :chack_password_not_null} = assert ClientUserQuery.chack_password_not_null(changed_user.password_hash)
+    end
   end
 
 
@@ -222,6 +234,26 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
       {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
 
       {:error, :edit_user_password_with_user_id, :current_password} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, new_password, new_password)
+    end
+
+    test "add_password -- user_not_found" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:error, :add_password, :user_not_found} = assert ClientUserQuery.add_password(Ecto.UUID.generate, new_password)
+    end
+
+    test "add_password -- password_not_null" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:error, :add_password, :password_not_null} = assert ClientUserQuery.add_password(user_info.id, new_password)
+    end
+
+    test "delete_password -- user_not_found" do
+      {:error, :delete_password, :user_not_found} = assert ClientUserQuery.delete_password(Ecto.UUID.generate)
+    end
+
+    test "delete_password -- null_password" do
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.drop(@true_user_parameters, [:password]))
+      {:error, :delete_password, :null_password} = assert ClientUserQuery.delete_password(user_info.id)
     end
   end
 end

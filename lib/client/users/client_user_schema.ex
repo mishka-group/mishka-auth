@@ -47,16 +47,6 @@ defmodule MishkaAuth.Client.Users.ClientUserSchema do
      |> hash_password
    end
 
-   @spec unconfirmed_email_changeset(
-           {map, map} | %{:__struct__ => atom | %{__changeset__: map}, optional(atom) => any},
-           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
-         ) :: Ecto.Changeset.t()
-
-   def unconfirmed_email_changeset(struct, params \\ %{}) do
-     struct
-     |> cast(params, [:unconfirmed_email])
-     |> validate_required([:unconfirmed_email], message: "Email can't be blank")
-   end
 
    @spec change_password_changeset(
            {map, map} | %{:__struct__ => atom | %{__changeset__: map}, optional(atom) => any},
