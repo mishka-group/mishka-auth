@@ -474,4 +474,28 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     end
   end
 
+  @spec add_password(data_uuid(), password()) ::
+          {:error, :add_password, :password_not_null | :user_not_found}
+          | {:ok, :add_password, Ecto.Schema.t()}
+          | {:error, :add_password, :data_input_problem, Ecto.Changeset.t()}
+
+  def add_password(user_id, user_password) do
+    with {:ok, :find_user_with_user_id, user_info} <- find_user_with_user_id(user_id),
+         {:error, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
+         {:ok, :edit_user_password_with_user_id, user_update_info} <- edit_user_password_with_user_id(user_info, %{password: user_password}) do
+
+          {:ok, :add_password, user_update_info}
+
+    else
+      {:error, :find_user_with_user_id} ->
+        {:error, :add_password, :user_not_found}
+
+      {:ok, :chack_password_not_null} ->
+        {:error, :add_password, :password_not_null}
+
+        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset} ->
+        {:error, :add_password, :data_input_problem, changeset}
+    end
+  end
+
 end
