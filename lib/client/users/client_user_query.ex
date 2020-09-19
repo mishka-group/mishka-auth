@@ -397,7 +397,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   @spec chack_password_not_null(password()) ::
           {:error, :chack_password_not_null} | {:ok, :chack_password_not_null}
 
-  defp chack_password_not_null(pass) do
+  def chack_password_not_null(pass) do
     if pass == nil, do: {:error, :chack_password_not_null}, else: {:ok, :chack_password_not_null}
   end
 
@@ -495,6 +495,33 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
         {:error, :edit_user_password_with_user_id, :data_input_problem, changeset} ->
         {:error, :add_password, :data_input_problem, changeset}
+    end
+  end
+
+  @spec delete_password(data_uuid()) ::
+          {:error, :delete_password, :null_password | :user_not_found}
+          | {:ok, :delete_password, Ecto.Schema.t()}
+          | {:error, :delete_password, :data_input_problem, Ecto.Changeset.t()}
+
+  def delete_password(user_id) do
+    with {:ok, :find_user_with_user_id, user_info} <- find_user_with_user_id(user_id),
+         {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash) do
+
+          {:ok, changed_user} = Ecto.Changeset.change(user_info, %{password_hash: nil})
+          |> Db.repo.update
+
+
+          {:ok, :delete_password, changed_user}
+
+    else
+      {:error, :find_user_with_user_id} ->
+        {:error, :delete_password, :user_not_found}
+
+      {:error, :chack_password_not_null} ->
+        {:error, :delete_password, :null_password}
+
+        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset} ->
+        {:error, :delete_password, :data_input_problem, changeset}
     end
   end
 
