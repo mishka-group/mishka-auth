@@ -21,7 +21,7 @@ defmodule MishkaAuth.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :scrivener_ecto, :httpoison],
       mod: {MishkaAuth.Application, []}
     ]
   end
@@ -45,6 +45,8 @@ defmodule MishkaAuth.MixProject do
       {:telemetry, "~> 0.4.2"},
       {:ex_doc, "~> 0.22.2", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:httpoison, "~> 1.7"},
+      {:scrivener_ecto, "~> 2.5"}
     ]
   end
 
