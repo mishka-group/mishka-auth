@@ -5,7 +5,7 @@ defmodule MishkaAuth.Helper.SanitizeStrategy do
   # No capital letter allowed, must contain `@` and `.` and "top-level domain" must be at least 2 character.
   @spec regex_validation(:email | :password | :username) :: Regex.t()
   def regex_validation(:email) do
-    ~r/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,63}$/
+    ~r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/
   end
 
   # Must contain lowercase and uppercase and number, at least 8 character.
