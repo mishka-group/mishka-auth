@@ -117,6 +117,21 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
       {:ok, :delete_password, changed_user} = assert ClientUserQuery.delete_password(add_user_info.id)
       {:error, :chack_password_not_null} = assert ClientUserQuery.chack_password_not_null(changed_user.password_hash)
     end
+
+    test "show all users" do
+      {:ok, :add_user, _add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      [_some_users] = assert ClientUserQuery.show_users()
+    end
+
+    test "show users with paginate" do
+      {:ok, :add_user, _add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      %Scrivener.Page{page_number: 1, page_size: 20, total_entries: 1, total_pages: 1} = assert ClientUserQuery.show_users(1, 20)
+    end
+
+    test "show users with paginate and status" do
+      {:ok, :add_user, _add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      %Scrivener.Page{page_number: 1, page_size: 20, total_entries: 1, total_pages: 1} = assert ClientUserQuery.show_users(1, 20, 1)
+    end
   end
 
 
@@ -254,6 +269,18 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     test "delete_password -- null_password" do
       {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.drop(@true_user_parameters, [:password]))
       {:error, :delete_password, :null_password} = assert ClientUserQuery.delete_password(user_info.id)
+    end
+
+    test "show users all user without paginat" do
+      [] = assert ClientUserQuery.show_users()
+    end
+
+    test "show users all user with paginat" do
+      %Scrivener.Page{entries: [], page_number: 1, page_size: 20, total_entries: 0, total_pages: 1} = assert ClientUserQuery.show_users(1, 20)
+    end
+
+    test "show users all user with status" do
+      %Scrivener.Page{entries: [], page_number: 1, page_size: 20, total_entries: 0, total_pages: 1} = assert ClientUserQuery.show_users(1, 20, 0)
     end
   end
 end

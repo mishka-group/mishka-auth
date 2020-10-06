@@ -521,4 +521,62 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     end
   end
 
+  # show all user without paginate
+
+  @spec show_users :: Ecto.Repo.t() | [Ecto.Schema.t()]
+
+  def show_users() do
+    query = from u in ClientUserSchema,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email,
+      status: u.status,
+      unconfirmed_email: u.unconfirmed_email,
+      inserted_at: u.inserted_at,
+      updated_at: u.updated_at,
+    }
+    Db.repo.all(query)
+  end
+
+  # show all user with paginate
+  @spec show_users(number, number) :: Scrivener.Page.t() | [] | [Ecto.Schema.t()]
+
+  def show_users(pagenumber, page_size) do
+    query = from u in ClientUserSchema,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email,
+      status: u.status,
+      unconfirmed_email: u.unconfirmed_email,
+      inserted_at: u.inserted_at,
+      updated_at: u.updated_at,
+    }
+    Db.repo.paginate(query, %{page: pagenumber, page_size: page_size})
+  end
+
+  # show all user with paginate and status, this is force by gaurd cuz we need to know if there is a new EctoEnume to improve it
+  @spec show_users(number, number, any) :: Scrivener.Page.t() | [] | [Ecto.Schema.t()]
+
+  def show_users(pagenumber, page_size, status) when status < 4 do
+    query = from u in ClientUserSchema,
+    where: u.status == ^status,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email,
+      status: u.status,
+      unconfirmed_email: u.unconfirmed_email,
+      inserted_at: u.inserted_at,
+      updated_at: u.updated_at,
+    }
+    Db.repo.paginate(query, %{page: pagenumber, page_size: page_size})
+  end
 end
