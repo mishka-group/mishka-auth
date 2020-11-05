@@ -22,8 +22,8 @@ defmodule MishkaAuth.Helper.SanitizeStrategy do
   def changeset_input_validation(changeset, :default) do
     changeset
     |> validate_format(:email, regex_validation(:email), message: "email format is invalid.")
-     |> validate_format(:username, regex_validation(:username), message: "username format is invalid.")
-     |> validate_format(:password, regex_validation(:password), message: "password format is invalid.")
+    |> validate_format(:username, regex_validation(:username), message: "username format is invalid.")
+    |> validate_format(:password, regex_validation(:password), message: "password format is invalid.")
   end
 
   def changeset_input_validation(changeset, :custom) do

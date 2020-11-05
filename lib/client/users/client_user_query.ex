@@ -580,6 +580,12 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     Db.repo.paginate(query, %{page: pagenumber, page_size: page_size})
   end
 
+  @spec reset_password(email(), String.t(), password(), :email) ::
+          {:error, :reset_password, :same_code | :user_not_found}
+          | {:ok, :reset_password, Ecto.Schema.t()}
+          | {:error, :reset_password, :data_exist | :data_input_problem,
+             String.t() | Ecto.Changeset.t()}
+
   def reset_password(email, code, new_password, :email) do
     with {:ok, :get_data_of_singel_id, record} <- MishkaAuth.RedisClient.get_data_of_singel_id("reset_password", email),
          {:ok, :same_code} <- same_code(code, record["code"]),
@@ -605,6 +611,9 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
 
+  @spec reset_password(email(), String.t(), :email) ::
+          {:error, :reset_password, :find_user_with_email}
+          | {:ok, :reset_password, Ecto.Schema.t()}
   def reset_password(email, country, :email) do
     with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email) do
       random_code =  MishkaAuth.Extra.randstring(8)
@@ -623,6 +632,11 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
         {:error, :reset_password, :find_user_with_email}
     end
   end
+
+  @spec verify_email(email(), String.t(), :email, :verify) ::
+          {:ok, :verify_email}
+          | {:error, :verify_email, :same_code}
+          | {:error, :verify_email, :data_exist, String.t()}
 
   def verify_email(email, code, :email, :verify) do
     with {:ok, :get_data_of_singel_id, record} <- MishkaAuth.RedisClient.get_data_of_singel_id("verify_email", email),
@@ -643,6 +657,10 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
         {:error, :verify_email, :same_code}
     end
   end
+
+  @spec verify_email(email(), String.t(), :email) ::
+          {:error, :verify_email, :find_user_with_email}
+          | {:ok, :verify_email, Ecto.Schema.t()}
 
   def verify_email(email, country, :email) do
     with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email) do
