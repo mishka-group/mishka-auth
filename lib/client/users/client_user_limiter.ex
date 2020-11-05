@@ -158,13 +158,13 @@ defmodule MishkaAuth.Client.Users.ClientUserLimiter do
     end
   end
 
-  defp add_to_redis(:register_limiter, email, number, user_ip, time) do
+  def add_to_redis(:register_limiter, email, number, user_ip, time) do
     Redis.insert_or_update_into_redis(Atom.to_string(:register_limiter), user_ip, %{
       number: number, email: email, user_ip: user_ip, update_time: Timex.now
     }, time)
   end
 
-  defp add_to_redis(strategy, email, number, user_ip, time) do
+  def add_to_redis(strategy, email, number, user_ip, time) do
     Redis.insert_or_update_into_redis(Atom.to_string(strategy), email, %{
       number: number, email: email, user_ip: user_ip, update_time: Timex.now
     }, time)

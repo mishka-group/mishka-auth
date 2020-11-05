@@ -23,7 +23,14 @@ defmodule MishkaAuth.Email.Sender do
   end
 
 
-  def email_type("reset_password", info) do
+  def email_type(:reset_password, info) do
+    %{
+      text: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",
+      html: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",
+    }
+  end
+
+  def email_type(:verify_email, info) do
     %{
       text: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",
       html: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",

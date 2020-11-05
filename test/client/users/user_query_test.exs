@@ -132,6 +132,25 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
       {:ok, :add_user, _add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
       %Scrivener.Page{page_number: 1, page_size: 20, total_entries: 1, total_pages: 1} = assert ClientUserQuery.show_users(1, 20, 1)
     end
+
+    test "send reset password" do
+      # needes config email in config
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:ok, :reset_password, _user_info} = assert ClientUserQuery.reset_password(user_info.email, "Iran", :email)
+
+      {:ok, :get_data_of_singel_id, record} = MishkaAuth.RedisClient.get_data_of_singel_id("reset_password", user_info.email)
+      {:ok, :reset_password, _user_info1} = assert ClientUserQuery.reset_password(user_info.email, record["code"], "Test2121255s", :email)
+    end
+
+    test "verify_email" do
+      # needes config email in config
+
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:ok, :verify_email, _user_info} = assert ClientUserQuery.verify_email(user_info.email, "Iran", :email)
+
+      {:ok, :get_data_of_singel_id, record} = MishkaAuth.RedisClient.get_data_of_singel_id("verify_email", user_info.email)
+      {:ok, :verify_email} = assert ClientUserQuery.verify_email(user_info.email, record["code"], :email, :verify)
+    end
   end
 
 
@@ -207,7 +226,7 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     end
 
     test "edit user verified email" do
-      {:error, :edit_user_password, :user_not_found} = assert ClientUserQuery.edit_user_verified_email("email@email.com")
+      {:error, :edit_user_verified_email, :user_not_found} = assert ClientUserQuery.edit_user_verified_email("email@email.com")
     end
 
     test "valid password" do
@@ -281,6 +300,22 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
     test "show users all user with status" do
       %Scrivener.Page{entries: [], page_number: 1, page_size: 20, total_entries: 0, total_pages: 1} = assert ClientUserQuery.show_users(1, 20, 0)
+    end
+
+    test "send reset password" do
+      {:error, :reset_password, :find_user_with_email} = assert ClientUserQuery.reset_password("w@w.com", "Iran", :email)
+    end
+
+    test "reset password code" do
+      {:error, :reset_password, :data_exist, _msg} = assert ClientUserQuery.reset_password("w@w.com", "test", "test123", :email)
+    end
+
+    test "verify email" do
+      {:error, :verify_email, :find_user_with_email} = assert ClientUserQuery.verify_email("w@w.com", "Iran", :email)
+    end
+
+    test "verify email code" do
+      {:error, :verify_email, :data_exist, _msg} = assert ClientUserQuery.verify_email("w@w.com", "test", :email, :verify)
     end
   end
 end

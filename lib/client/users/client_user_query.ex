@@ -326,7 +326,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
       {:ok, :edit_user_verified_email}
     else
       {:error, :find_user_with_email} ->
-        {:error, :edit_user_password, :user_not_found}
+        {:error, :edit_user_verified_email, :user_not_found}
     end
   end
 
@@ -580,20 +580,92 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     Db.repo.paginate(query, %{page: pagenumber, page_size: page_size})
   end
 
-  def reset_password(email, code, new_password) do
+  def reset_password(email, code, new_password, :email) do
+    with {:ok, :get_data_of_singel_id, record} <- MishkaAuth.RedisClient.get_data_of_singel_id("reset_password", email),
+         {:ok, :same_code} <- same_code(code, record["code"]),
+         {:ok, :edit_user_password, user_info} <- edit_user_password(email, %{password: new_password}) do
 
-    edit_user_password(email, %{password: new_password})
+          MishkaAuth.RedisClient.delete_record_of_redis("reset_password", email)
 
-    # {:ok, :edit_user_password, user_update_info}
-    # {:error, :edit_user_password, :user_not_found}
-    # {:error, :edit_user_password, :data_input_problem, changeset}
+          {:ok, :reset_password, user_info}
+    else
+      {:error, :edit_user_password, :user_not_found} ->
+        {:error, :reset_password, :user_not_found}
+
+      {:error, :get_all_fields_of_record_redis, msg} ->
+        {:error, :reset_password, :data_exist, msg}
+
+      {:error, :edit_user_password, :data_input_problem, changeset} ->
+        {:error, :reset_password, :data_input_problem, changeset}
+
+      {:error, :same_code}  ->
+        {:error, :reset_password, :same_code}
+    end
+
   end
 
 
-  def reset_password(conn, email) do
-    # if limiter let us to send request
-    # create a random code to reset the password
-    # store in redis limiter to call
-    # send email to user email
+  def reset_password(email, country, :email) do
+    with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email) do
+      random_code =  MishkaAuth.Extra.randstring(8)
+
+      MishkaAuth.RedisClient.insert_or_update_into_redis("reset_password", user_info.email, %{
+        code: random_code,
+        email: email
+      }, MishkaAuth.get_config_info(:reset_password_expiration))
+
+      MishkaAuth.Email.Sender.account_email(:reset_password, %{email: user_info.email, subject: "Reset Password", code: random_code}, country)
+      |> MishkaAuth.Email.Mailer.deliver_later
+
+      {:ok, :reset_password, user_info}
+    else
+      {:error, :find_user_with_email} ->
+        {:error, :reset_password, :find_user_with_email}
+    end
   end
+
+  def verify_email(email, code, :email, :verify) do
+    with {:ok, :get_data_of_singel_id, record} <- MishkaAuth.RedisClient.get_data_of_singel_id("verify_email", email),
+         {:ok, :same_code} <- same_code(code, record["code"]),
+         {:ok, :edit_user_verified_email} <- edit_user_verified_email(email) do
+
+          MishkaAuth.RedisClient.delete_record_of_redis("verify_email", email)
+
+          {:ok, :verify_email}
+    else
+      {:error, :edit_user_verified_email, :user_not_found} ->
+        {:error, :verify_email, :user_not_found}
+
+      {:error, :get_all_fields_of_record_redis, msg} ->
+        {:error, :verify_email, :data_exist, msg}
+
+      {:error, :same_code}  ->
+        {:error, :verify_email, :same_code}
+    end
+  end
+
+  def verify_email(email, country, :email) do
+    with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email) do
+        random_code =  MishkaAuth.Extra.randstring(8)
+
+        MishkaAuth.RedisClient.insert_or_update_into_redis("verify_email", user_info.email, %{
+          code: random_code,
+          email: email
+        }, MishkaAuth.get_config_info(:verify_email_expiration))
+
+        MishkaAuth.Email.Sender.account_email(:verify_email, %{email: user_info.email, subject: "Verify Email", code: random_code}, country)
+        |> MishkaAuth.Email.Mailer.deliver_later
+
+        {:ok, :verify_email, user_info}
+    else
+      {:error, :find_user_with_email} ->
+        {:error, :verify_email, :find_user_with_email}
+    end
+  end
+
+
+  defp same_code(user_code, redis_code) do
+    if user_code ===  redis_code, do: {:ok, :same_code} , else: {:error, :same_code}
+  end
+
 end
