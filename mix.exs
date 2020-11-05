@@ -4,7 +4,7 @@ defmodule MishkaAuth.MixProject do
   def project do
     [
       app: :mishka_auth,
-      version: "0.0.1",
+      version: "0.0.2",
       elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       build_embedded: Mix.env == :prod,
@@ -21,7 +21,7 @@ defmodule MishkaAuth.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :scrivener_ecto, :httpoison],
+      extra_applications: [:logger, :scrivener_ecto, :httpoison, :bamboo, :bamboo_smtp],
       mod: {MishkaAuth.Application, []}
     ]
   end
@@ -46,7 +46,10 @@ defmodule MishkaAuth.MixProject do
       {:ex_doc, "~> 0.22.2", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:httpoison, "~> 1.7"},
-      {:scrivener_ecto, "~> 2.5"}
+      {:scrivener_ecto, "~> 2.5"},
+      {:bamboo, "~> 1.5"},
+      {:bamboo_smtp, "~> 3.0"},
+      {:timex, "~> 3.6"}
     ]
   end
 
