@@ -579,4 +579,21 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
     }
     Db.repo.paginate(query, %{page: pagenumber, page_size: page_size})
   end
+
+  def reset_password(email, code, new_password) do
+
+    edit_user_password(email, %{password: new_password})
+
+    # {:ok, :edit_user_password, user_update_info}
+    # {:error, :edit_user_password, :user_not_found}
+    # {:error, :edit_user_password, :data_input_problem, changeset}
+  end
+
+
+  def reset_password(conn, email) do
+    # if limiter let us to send request
+    # create a random code to reset the password
+    # store in redis limiter to call
+    # send email to user email
+  end
 end
