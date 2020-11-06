@@ -1,7 +1,6 @@
 defmodule MishkaAuth.Email.Sender do
   import Bamboo.Email
   use Timex
-  use Phoenix.HTML
 
   @email_name MishkaAuth.get_config_info(:email_name)
 
