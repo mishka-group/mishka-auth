@@ -18,6 +18,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
   alias MishkaAuth.Helper.Db
   alias MishkaAuth.Client.Users.ClientUserSchema
+  alias MishkaAuth.Helper.Mailer
+  alias MishkaAuth.Email.Sender
 
 
 
@@ -623,8 +625,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
         email: email
       }, MishkaAuth.get_config_info(:reset_password_expiration))
 
-      MishkaAuth.Email.Sender.account_email(:reset_password, %{email: user_info.email, subject: "Reset Password", code: random_code}, country)
-      |> MishkaAuth.Email.Mailer.deliver_later
+      Sender.account_email(:reset_password, %{email: user_info.email, subject: "Reset Password", code: random_code}, country)
+      |> Mailer.mailer.deliver_later
 
       {:ok, :reset_password, user_info}
     else
@@ -671,8 +673,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
           email: email
         }, MishkaAuth.get_config_info(:verify_email_expiration))
 
-        MishkaAuth.Email.Sender.account_email(:verify_email, %{email: user_info.email, subject: "Verify Email", code: random_code}, country)
-        |> MishkaAuth.Email.Mailer.deliver_later
+        Sender.account_email(:verify_email, %{email: user_info.email, subject: "Verify Email", code: random_code}, country)
+        |> Mailer.mailer.deliver_later
 
         {:ok, :verify_email, user_info}
     else
