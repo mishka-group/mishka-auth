@@ -85,7 +85,7 @@ mix phx.new your_project
 defp deps do
   [
     ....
-    {:mishka_auth, "~> 0.0.2", hex: :plug_mishka_auth}
+    {:mishka_auth, "~> 0.0.1", hex: :plug_mishka_auth}
     ....
   ]
 end
@@ -363,10 +363,260 @@ MishkaAuth.Plug.LoginedCurrentUserPlug
 # http://127.0.0.1:4000/auth/google?strategy=current_token
 # http://127.0.0.1:4000/auth/google?strategy=refresh_token
 ```
+---
+
+### فراخوانی توابع اولویت دار یا ضروری در پروژه های شخصی:
+
+استراتژی های لاگین در سیستم ها بر اساس شرایط کاربران بسیار متفاوت می باشد به همین ترتیب برای راحتی کار یک ماژول به نام MishkaAuth ساخته شد که در آن برخی از توابع مورد نیاز شما فراخوانی شد از جمله تابع 
+
+```elixir
+revoke_token
+```
+
+که این امکان را به شما می دهد تا به راحتی بر اساس درخواست کاربر یا حتی درخواست مدیریت بر اساس نیازی که دارید. توکن را منقضی کرده و اگر نیاز داشتید با یک استراتژی سفارشی از طرف خودتان دسترسی کاربرا را قطع کنید 
+
+```elixir
+[:refresh_token, :access_token, :user_token, :all_token]
+```
+همانطور که در لیست بالا می بنید شما امکان این را دارید که توکن ها را بر اساس استراتژی های درخواستی در نرم افزارتان حذف کنید و یا اینکه به صورت کلی همه را بررسی نموده و حذف کنید. لازم به ذکر هست این بخش خیلی جای کار بیشتری دارد مخصوصا در زمانی که چندین توکن در هر استراتژی ساخته شود و همینطور اطلاعاتی از جمله مکان لاگین شدن کاربر و آیپی و ... نیز به صورت موقت یا همیشگی ذخیره سازی گردد.
+
+---
+---
+
+> امکانات زیر از نسخه 0.0.2 اضافه شده است لطفا فایل config خودتان را بر اساس آخرین به روز رسانی تغییر دهید
+
+### سنتایزر و ولیدیشن برای ورودی و خروجی با امکان کاستوم
+
+یکی از مواردی که می تونه کنترل بهتری برای مدیریت دیتابیس و تا حدودی در زمینه امنیت بده. کنترل ورودی ها و خروجی ها فیلد های پر شده به وسیله کاربر می باشد 
+
+ماژول مربوطه:
+```
+MishkaAuth.Helper.SanitizeStrategy
+```
+در این ماژول یک فانکشن main وجود دارد به نام `changeset_input_validation(changeset, :custom` این فانکشن چک می کند که آیا شما در فایل کانفیگ ولیدیشن دیفالت را می خواهید که تشکیل شده از سه رجکس می باشد 
+
+```elixir
+  def regex_validation(:email) do
+    ~r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/
+  end
+
+  # Must contain lowercase and uppercase and number, at least 8 character.
+  def regex_validation(:password) do
+    ~r/(?=.*\d)(?=.*[a-zA-Z])(?!.*(\s)).{8,32}$/
+  end
+
+  # No capital letter allowed, can contain `_` and `.`, can't start with number or `_` or `.`, can't end with `_` or `.`.
+  def regex_validation(:username) do
+    ~r/(?!(\.))(?!(\_))([a-z0-9_\.]{2,15})[a-z0-9]$/
+  end
+
+```
+
+به صورت پیشفرض شما نیازی به دست زدن یا فراخوانی ندارید اگر فقط می خواهید جدا از این موارد کار کنید و در حقیقت `changeset`  خودتان را صدا بزنید فقط کافیست دو پارامتر کانفیگ زیر را ارزش گذاری نمایید. اولین مورد ماژول و دومین مورد اسم فانکشن که به صورت `atom` باید نوشته شود.
+
+```
+input_validation_module
+input_validation_function
+```
+
+> نکته: یک پارامتر دیگردر کانفیگ باید قرار بگیرد که ارزش آن به صورت بولین می باشد تا اینکه از شما اجازه بگیرد آیا نیاز به ولیدیشن کاستوم دارید یا خیر `input_validation_status`
+
+
+### query های اضافه برای فایل `client_user_query.ex`
+
+برای راحتی کار شما فقط کافیست فانکشن های زیر را فراخوانی کنید
+
+`show_users` برای نمایش کاربران در پنل ادمین خودتان که بر اساس `status` تعداد رکورد در هر صفحه و صفحه ای که می خواهید لود شود ورودی می پذیرد
+
+`reset_password` در موقع فراموشی پسورد و ریست شدن اون به واسطه ایمیل و همینطور ورفای کد و تغییر ئسورد
+
+`verify_email` برای فعال سازی اکانت هایی که ایمیل خودشون رو فعال نکردن که شامل ایجاد کد رندوم و ارسالش و همینطور وریفای کد برای فعال سازی ایمیل
+
+`delete_password` در مواقعی که کاربر یک بار ثبت نام کرده به صورت دایرکت یا پسورد قرار داده و الان فقط می خواد از شبکه اجتماعی استفاده کنه و نیازی به پسورد نداره
+
+`add_password` در زمانی که کاربر با شبکه اجتماعی ثبت نام کرده است و حال دوست دارد برای حساب کاربری خودش پسورد جدید قرار بدهد.
+
+> لازم به ذکر است برای تمامی مواردی که ایمیل ارسال می شود شما نیاز دارید اول افزونه `bamboo` رو کانفیگ کنید روی پروژه خودتون و در کانفیگ معرفی کنید به افزونه `MishkaAuth` بعد همینطور قالب ایمیل مخصوص به خودتون رو نیز در یک فایل الیکسیر بسازید و معرفی نمایید
+
+داکیومنت پلاگین ایمیل: https://github.com/thoughtbot/bamboo
+
+فقط کافیه یک فایل بسازید در یک مسیری و این خطوط رو بزارید توش:
+
+```elixir
+# some/path/within/your/app/mailer.ex
+defmodule MyApp.Mailer do
+  use Bamboo.Mailer, otp_app: :my_app
+end
+```
+و به وسیله لینک بالا راه ارسال ایمیل رو نصب و همینطور کانفیگ کنید روی این پلاگین `smtp` استفاده شده. بعد از ساخت فایل بالا در کانفیگ در پارامتر `mailer` اسم کامل ماژول را قرار بدهید.
+
+### تخصیص قالب اختصاصی ایمیل:
+
+```
+reset_password_email
+verify_email
+```
+
+در دو پارامتر بالا شما می توانید فانکشن و ماژول را معرفی کنید که یک ورودی دارد که تمامی اطلاعات در آن قابل چاپ و همینطور امکان جایگزاری در قالب اختصاصی هست
+
+#### نمونه کانفیگ: 
+
+```
+reset_password_expiration: 300, #5min
+verify_email_expiration: 300, #5min
+reset_password_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+verify_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+```
+
+> منقضی شدن کد رندوم برای ورفای در ردیس نیز در بالا قابل تغییر می باشد.
+
+#### نمونه ساخت یک ماژول:
+
+```elixir
+defmodule MishkaAuth.TestBodyEmail do
+
+  @site_link MishkaAuth.get_config_info(:site_link)
+
+  def reset_password_email_body(info) do
+    %{
+      text: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",
+      html: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",
+    }
+
+  end
+
+  def verify_email_body(info) do
+    %{
+      text: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",
+      html: "کد تغییر  و فراموشی پسورد  #{@site_link}/reset-password/#{info.code}",
+    }
+  end
+end
+```
+
+> در مثال بالا ما از `html`  استفاده نکردیم ولی شما می توانید از این مورد استفاده کامل رو ببرید و موارد درخواستی خودتون رو پیاده کنید
+
+
+### لیمیتر
+
+مطمئنن این بخش بیشتر جنبه حمایتی داره و کداش تا حدودی بر اساس نیاز بنده ثابت نوشته شده است. و اگر شما نیاز اختصاصی دارید باید این موضوع رو به شما بگم که فعلا برنامه ای برای داینامیک سازیش ندارم. ولی خیلی کمک کننده هست و هزینه اسپم کردن روی رودتر های درخواستی شما رو می گیره و مچ می شه با کد کپچای گوگل.
+
+ماژول: `MishkaAuth.Client.Users.ClientUserLimiter`
+
+
+فانکشن اصلی:
+
+```elixir
+  def is_data_limited?(strategy, email, user_ip) do
+    case MishkaAuth.get_config_info(:limiter) do
+      true ->
+        limiter(strategy, email, user_ip)
+      _ ->
+        {:error, :limiter, :inactive}
+    end
+
+  end
+```
+همانطور از کد بالا متوجه شده اید. شما نیاز دارید در کانفیگ پارامتر `limiter` رو قرار بدید و ارزش بولین بهش بدید
+
+استراتژی هایی که فعلنه اماده شده:
+```
+  # strategies = %{
+  #   :register_limiter,
+  #   :login_limiter,
+  #   :reset_password_limiter,
+  #   :verify_email_limiter
+  # }
+
+```
+
+در ورودی های مربوط به این فایل همیشه سه ورودی باید فراخوانی شود که به شرح زیر می باشد:
+
+`strategy, email, user_ip`
+
+بجز استراتژی ثبت نام که بر اساس `user_ip` چک می شه بقیه چون در دیتابیس وب سایت موجود هست با `email` کاربر بررسی می شه
+
+در فایل زیر می تونید مراحل مسدود سازی رو ببنید
+
+https://github.com/mishka-group/mishka-auth/blob/master/lib/client/users/client_user_limiter.ex
+
+
+### پیاده سازی کد کپچا
+
+کد کپچا فعلنه فقط گوگل رو پشتیبانی می کنه و در آینده ممکنه به اون اضافه بشه. البته اگر نظری در این رابطه دارید حتما با ما به اشتراک قرار بدهید
+
+برای فراخوانی اون فقط کافیه ماژول `MishkaAuth.Helper.Captcha` رو صدا بزنید به همراه فانکشن `verify(:google, google_params)`  لازم به ذکر هست که حتما باید در کانفیگ نیز پارامتر های `captcha` و `google_re_captcha_secret`  قرار گرفته باشد.
+
+
+نگاه اجمالی به کانفیگ های مورد نیاز:
+
+```elixir
+config :mishka_auth, MishkaAuth,
+repo: YOURREPO.Repo,
+login_redirect: "/",
+user_redirect_path: "/",
+authenticated_msg: "Successfully authenticated.",
+token_table: "user_token",
+refresh_token_table: "refresh_user_token",
+access_token_table: "access_token",
+user_refresh_token_expire_time: 18000, #5 hour
+user_access_token_expire_time: 600, #10 min
+user_jwt_token_expire_time: 6000, #10 min
+temporary_table: "temporary_user_data",
+redix: "REDIS PASSWORD",
+changeset_redirect_view: MishkaAuthWeb.AuthView,
+changeset_redirect_html: "index.html",
+register_data_view: MishkaAuthWeb.AuthView,
+register_data_html: "index.html",
+automatic_registration: true,
+pub_sub: MishkaAuth.PubSub,
+input_validation_status: :default,
+input_validation_module: nil,
+input_validation_function: nil,
+captcha: {true, :google},
+google_re_captcha_secret: "RECAPTCHA SECRET",
+site_link: "YOUR SITE LINK",
+limiter: true,
+reset_password_expiration: 300, #5min
+verify_email_expiration: 300, #5min
+reset_password_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+verify_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+email_name: "@trangell.com",
+mailer: MishkaAuth.Email.Mailer
+```
+
+نمونه کانفیگ مربوط به ایمیل:
+
+```elixir
+config :mishka_auth, MishkaAuth.Email.Mailer,
+adapter: Bamboo.SMTPAdapter,
+  server: "YOR MAIL SERVER",
+  hostname: "YOUR HOST NAME",
+  port: 587,
+  username: "YOUR EMAIL OR USERNAME",
+  password: "YOUR PASSWORD",
+  tls: :if_available,
+  allowed_tls_versions: [:tlsv1, :"tlsv1.1", :"tlsv1.2"],
+  retries: 1,
+  no_mx_lookups: true,
+  auth: :always
+
+```
+---
+---
+
+### تست
+
+برای این پروژه تست نویسی انجام شده به همین ترتیب پیشنهاد می شود اول پروژه فورک شود و بعد ماژول فونیکس شما در پروژه جایگزین گردد بعد تست انجام شود . چون بخش بزرگی از تست به واسطه فونیکس انجام می گیرد و این امکان را می دهد که تست تمیز تری داشته باشیم. اما چرا ماژول ها اد نشده تا نیاز به این کار نباشد . تنها دلیلش بخاطر کبود وقت بوده و اهمیت کم این موضوع در این زمان فعلی به زودی یک پکیج برای تست نیز اپلود می گردد و همینطور در نقشه راه این پلاگین چنین موردی قرار دارد که بعد از انجام شدنش دیگر نیازی به چنین کاری نیست.
 
 ----
 
 ### لینک های مربوط به این پلاگین
 
-لینک گیت هاب: https://github.com/mishka-group/mishka-auth
-لینک پلاگین از پکیج منیجر هکس: https://hex.pm/packages/plug_mishka_auth/
+* لینک گیت هاب: https://github.com/mishka-group/mishka-auth
+
+* لینک پلاگین از پکیج منیجر هکس: https://hex.pm/packages/plug_mishka_auth/
+
+* لینک readme فارسی: https://github.com/shahryarjb/mishka-auth/blob/master/README_FA.md
+
+* لینک readme انگلیسی: https://github.com/mishka-group/mishka-auth/blob/master/README.md
