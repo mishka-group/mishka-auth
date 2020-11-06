@@ -2,8 +2,6 @@ defmodule MishkaAuth.Email.Sender do
   import Bamboo.Email
   use Timex
 
-  @email_name MishkaAuth.get_config_info(:email_name)
-
   @spec account_email(:reset_password | :verify_email, map(), String.t()) ::
           Bamboo.Email.t()
   def account_email(type, info, country) do
@@ -16,7 +14,7 @@ defmodule MishkaAuth.Email.Sender do
         "Return-Path" => "#{info.email}",
         "Subject" => "#{info.subject}",
         "Date" => "#{Timex.format!(your_country, "{WDshort}, {D} {Mshort} {YYYY} {h24}:{0m}:{0s} {Z}")}",
-        "message-id" => "<#{:base64.encode(:crypto.strong_rand_bytes(64))}#{@email_name}>"
+        "message-id" => "<#{:base64.encode(:crypto.strong_rand_bytes(64))}#{MishkaAuth.get_config_info(:email_name)}>"
       },
       text_body: email_type(type, info).text,
       html_body: email_type(type, info).html
