@@ -200,7 +200,7 @@ defmodule MishkaAuth.Client.Helper.HandleSocialRequest do
       {:ok, :get_data_of_singel_id, user_temporary_data} ->
         MishkaAuth.Strategy.none_registered_user_routing(conn, user_temporary_data, temporary_user_uniq_id, 200, strategy_type)
       _ ->
-        MishkaAuth.Strategy.failed_none_registered_user_routing(conn, %{error: "please try again. missing value."}, 404, strategy_type)
+        MishkaAuth.Strategy.failed_none_registered_user_routing(conn, %{error: "Please try again. missing value."}, 404, strategy_type)
     end
   end
 

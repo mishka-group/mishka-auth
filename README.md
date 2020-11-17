@@ -124,7 +124,7 @@ defp deps  do
 
  ....
 
- {:mishka_auth, "~> 0.0.1", hex: :plug_mishka_auth}
+ {:mishka_auth, "~> 0.0.2", hex: :plug_mishka_auth}
 
  ....
 

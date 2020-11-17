@@ -78,13 +78,13 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     test "check password user and password -- (:username)" do
       password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters |> Map.merge(%{password: password}))
-      {:ok, :check_password_user_and_password, :username, _user_info} = assert ClientUserQuery.check_password_user_and_password(create_user_info.username, password, :username)
+      {:ok, :check_user_and_password, :username, _user_info} = assert ClientUserQuery.check_user_and_password(create_user_info.username, password, :username)
     end
 
     test "check password user and password -- (:email)" do
       password = "passT1est#{MishkaAuth.Extra.randstring(10)}"
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters |> Map.merge(%{password: password}))
-      {:ok, :check_password_user_and_password, :email, _user_info} = assert ClientUserQuery.check_password_user_and_password(create_user_info.email, password, :email)
+      {:ok, :check_user_and_password, :email, _user_info} = assert ClientUserQuery.check_user_and_password(create_user_info.email, password, :email)
     end
 
     test "show public info of user(user_id, :user_id)" do
@@ -95,6 +95,61 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     test "show public info of user(email, :email)" do
       {:ok, :add_user, create_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
       {:ok, :show_public_info_of_user, :email, _user_info} = assert ClientUserQuery.show_public_info_of_user(create_user_info.email, :email)
+    end
+
+    test "edit user password with user id (user_info.id, old_password, new_password)" do
+      password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.merge(@true_user_parameters, %{password: password}))
+
+      {:ok, :edit_user_password_with_user_id, _user_update_info} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, password, new_password)
+    end
+
+    test "add password" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.drop(@true_user_parameters, [:password]))
+      {:ok, :add_password, _user_update_info} = assert ClientUserQuery.add_password(user_info.id, new_password)
+    end
+
+    test "delete password" do
+      {:ok, :add_user, add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:ok, :delete_password, changed_user} = assert ClientUserQuery.delete_password(add_user_info.id)
+      {:error, :chack_password_not_null} = assert ClientUserQuery.chack_password_not_null(changed_user.password_hash)
+    end
+
+    test "show all users" do
+      {:ok, :add_user, _add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      [_some_users] = assert ClientUserQuery.show_users()
+    end
+
+    test "show users with paginate" do
+      {:ok, :add_user, _add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      %Scrivener.Page{page_number: 1, page_size: 20, total_entries: 1, total_pages: 1} = assert ClientUserQuery.show_users(1, 20)
+    end
+
+    test "show users with paginate and status" do
+      {:ok, :add_user, _add_user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      %Scrivener.Page{page_number: 1, page_size: 20, total_entries: 1, total_pages: 1} = assert ClientUserQuery.show_users(1, 20, 1)
+    end
+
+    test "send reset password" do
+      # needes config email in config
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:ok, :reset_password, _user_info} = assert ClientUserQuery.reset_password(user_info.email, "Iran", :email)
+
+      {:ok, :get_data_of_singel_id, record} = MishkaAuth.RedisClient.get_data_of_singel_id("reset_password", user_info.email)
+      {:ok, :reset_password, _user_info1} = assert ClientUserQuery.reset_password(user_info.email, record["code"], "Test2121255s", :email)
+    end
+
+    test "verify_email" do
+      # needes config email in config
+
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:ok, :verify_email, _user_info} = assert ClientUserQuery.verify_email(user_info.email, "Iran", :email)
+
+      {:ok, :get_data_of_singel_id, record} = MishkaAuth.RedisClient.get_data_of_singel_id("verify_email", user_info.email)
+      {:ok, :verify_email} = assert ClientUserQuery.verify_email(user_info.email, record["code"], :email, :verify)
     end
   end
 
@@ -171,7 +226,7 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
     end
 
     test "edit user verified email" do
-      {:error, :edit_user_password, :user_not_found} = assert ClientUserQuery.edit_user_verified_email("email@email.com")
+      {:error, :edit_user_verified_email, :user_not_found} = assert ClientUserQuery.edit_user_verified_email("email@email.com")
     end
 
     test "valid password" do
@@ -182,13 +237,13 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
     test "check password user and password (:username)" do
       {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
-      {:error, :check_password_user_and_password, :username} = assert ClientUserQuery.check_password_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :username)
+      {:error, :check_user_and_password, :username} = assert ClientUserQuery.check_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :username)
     end
 
     test "check password user and password (:email)" do
       {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
 
-      {:error, :check_password_user_and_password, :email} = assert ClientUserQuery.check_password_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :email)
+      {:error, :check_user_and_password, :email} = assert ClientUserQuery.check_user_and_password(user_info.username, "#{MishkaAuth.Extra.randstring(10)}", :email)
     end
 
     test "show public info of user(user_id, :user_id)" do
@@ -197,6 +252,70 @@ defmodule MishkaAuthTest.Client.UserQueryTest do
 
     test "show public info of user(user_id, :email)" do
       {:error, :show_public_info_of_user, :email} = assert ClientUserQuery.show_public_info_of_user("email@email.com", :email)
+    end
+
+    test "edit user password with user id (user not found)" do
+      password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.merge(@true_user_parameters, %{password: password}))
+      {:ok, :delete_user, _struct} = assert ClientUserQuery.delete_user(user_info.id)
+
+      {:error, :edit_user_password_with_user_id, :user_not_found} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, password, new_password)
+    end
+
+    test "edit user password with user id (current password)" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+
+      {:error, :edit_user_password_with_user_id, :current_password} = assert ClientUserQuery.edit_user_password_with_user_id(user_info.id, new_password, new_password)
+    end
+
+    test "add_password -- user_not_found" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:error, :add_password, :user_not_found} = assert ClientUserQuery.add_password(Ecto.UUID.generate, new_password)
+    end
+
+    test "add_password -- password_not_null" do
+      new_password = "pass1Test#{MishkaAuth.Extra.randstring(10)}"
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(@true_user_parameters)
+      {:error, :add_password, :password_not_null} = assert ClientUserQuery.add_password(user_info.id, new_password)
+    end
+
+    test "delete_password -- user_not_found" do
+      {:error, :delete_password, :user_not_found} = assert ClientUserQuery.delete_password(Ecto.UUID.generate)
+    end
+
+    test "delete_password -- null_password" do
+      {:ok, :add_user, user_info} = assert ClientUserQuery.add_user(Map.drop(@true_user_parameters, [:password]))
+      {:error, :delete_password, :null_password} = assert ClientUserQuery.delete_password(user_info.id)
+    end
+
+    test "show users all user without paginat" do
+      [] = assert ClientUserQuery.show_users()
+    end
+
+    test "show users all user with paginat" do
+      %Scrivener.Page{entries: [], page_number: 1, page_size: 20, total_entries: 0, total_pages: 1} = assert ClientUserQuery.show_users(1, 20)
+    end
+
+    test "show users all user with status" do
+      %Scrivener.Page{entries: [], page_number: 1, page_size: 20, total_entries: 0, total_pages: 1} = assert ClientUserQuery.show_users(1, 20, 0)
+    end
+
+    test "send reset password" do
+      {:error, :reset_password, :find_user_with_email} = assert ClientUserQuery.reset_password("w@w.com", "Iran", :email)
+    end
+
+    test "reset password code" do
+      {:error, :reset_password, :data_exist, _msg} = assert ClientUserQuery.reset_password("w@w.com", "test", "test123", :email)
+    end
+
+    test "verify email" do
+      {:error, :verify_email, :find_user_with_email} = assert ClientUserQuery.verify_email("w@w.com", "Iran", :email)
+    end
+
+    test "verify email code" do
+      {:error, :verify_email, :data_exist, _msg} = assert ClientUserQuery.verify_email("w@w.com", "test", :email, :verify)
     end
   end
 end

@@ -18,6 +18,8 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
 
   alias MishkaAuth.Helper.Db
   alias MishkaAuth.Client.Users.ClientUserSchema
+  alias MishkaAuth.Helper.Mailer
+  alias MishkaAuth.Email.Sender
 
 
 
@@ -300,6 +302,15 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
 
+  def edit_user_password_with_user_id(user_info, attrs) do
+    with {:ok, :update_user_password, user_update_info} <- update_user_password(user_info, attrs) do
+
+      {:ok, :edit_user_password_with_user_id, user_update_info}
+    else
+      {:error, :update_user_password, changeset} ->
+        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset}
+    end
+  end
 
 
   @spec edit_user_verified_email(email()) ::
@@ -317,7 +328,7 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
       {:ok, :edit_user_verified_email}
     else
       {:error, :find_user_with_email} ->
-        {:error, :edit_user_password, :user_not_found}
+        {:error, :edit_user_verified_email, :user_not_found}
     end
   end
 
@@ -335,38 +346,60 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
   end
 
 
-  @spec check_password_user_and_password(username(), password(), :email | :username) ::
-          {:error, :check_password_user_and_password, :email | :username}
-          | {:ok, :check_password_user_and_password, :email | :username, Ecto.Schema.t()}
-  def check_password_user_and_password(username, password, :username) do
+
+  @spec check_user_and_password(binary, any, :email | :user_id | :username) ::
+          {:error, :check_user_and_password,
+           :current_password | :email | :null_password | :user_not_found | :username}
+          | {:ok, :check_user_and_password, :email | :user_id | :username, Ecto.Schema.t()}
+
+  def check_user_and_password(username, password, :username) do
     with {:ok, :find_user_with_username, user_info} <- find_user_with_username(username),
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_user_and_password, :username, user_info}
+          {:ok, :check_user_and_password, :username, user_info}
     else
       _ ->
-        {:error, :check_password_user_and_password, :username}
+        {:error, :check_user_and_password, :username}
     end
   end
 
-  def check_password_user_and_password(email, password, :email) do
+  def check_user_and_password(email, password, :email) do
     with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email),
          {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
          {:ok, :valid_password} <- valid_password(user_info, password) do
 
-          {:ok, :check_password_user_and_password, :email, user_info}
+          {:ok, :check_user_and_password, :email, user_info}
     else
       _ ->
-        {:error, :check_password_user_and_password, :email}
+        {:error, :check_user_and_password, :email}
     end
   end
 
+  def check_user_and_password(user_id, password, :user_id) do
+    with {:ok, :find_user_with_user_id, user_info} <- find_user_with_user_id(user_id),
+         {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
+         {:ok, :valid_password} <- valid_password(user_info, password) do
+
+          {:ok, :check_user_and_password, :user_id, user_info}
+    else
+      {:error, :find_user_with_user_id} ->
+        {:error, :check_user_and_password, :user_not_found}
+
+      {:error, :chack_password_not_null} ->
+        {:error, :check_user_and_password, :null_password}
+
+      {:error, :valid_password} ->
+        {:error, :check_user_and_password, :current_password}
+      _ ->
+        {:error, :check_user_and_password, :user_id}
+    end
+  end
 
   @spec chack_password_not_null(password()) ::
           {:error, :chack_password_not_null} | {:ok, :chack_password_not_null}
 
-  defp chack_password_not_null(pass) do
+  def chack_password_not_null(pass) do
     if pass == nil, do: {:error, :chack_password_not_null}, else: {:ok, :chack_password_not_null}
   end
 
@@ -410,6 +443,249 @@ defmodule MishkaAuth.Client.Users.ClientUserQuery do
       nil       -> {:error, :show_public_info_of_user, :email}
       user_info  -> {:ok, :show_public_info_of_user, :email, user_info}
     end
+  end
+
+  @spec edit_user_password_with_user_id(binary, password(), password()) ::
+          {:error, :edit_user_password_with_user_id,
+           :current_password | :null_password | :user_not_found}
+          | {:ok, :edit_user_password_with_user_id, Ecto.Schema.t()}
+          | {:error, :edit_user_password_with_user_id, :data_input_problem, Ecto.Changeset.t()}
+
+  def edit_user_password_with_user_id(user_id, old_password, new_password) do
+    with {:ok, :check_user_and_password, :user_id, user_info} <- check_user_and_password(user_id, old_password, :user_id),
+        {:ok, :edit_user_password_with_user_id, user_update_info} <- edit_user_password_with_user_id(user_info, %{password: new_password})
+     do
+
+      {:ok, :edit_user_password_with_user_id, user_update_info}
+
+    else
+      {:error, :check_user_and_password, :user_not_found} ->
+        {:error, :edit_user_password_with_user_id, :user_not_found}
+
+      {:error, :check_user_and_password, :null_password} ->
+        {:error, :edit_user_password_with_user_id, :null_password}
+
+      {:error, :check_user_and_password, :current_password} ->
+        {:error, :edit_user_password_with_user_id, :current_password}
+
+      {:error, :check_user_and_password, :user_id} ->
+        {:error, :edit_user_password_with_user_id, :unknown_error}
+
+      {:error, :edit_user_password_with_user_id, :data_input_problem, changeset} ->
+        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset}
+    end
+  end
+
+  @spec add_password(data_uuid(), password()) ::
+          {:error, :add_password, :password_not_null | :user_not_found}
+          | {:ok, :add_password, Ecto.Schema.t()}
+          | {:error, :add_password, :data_input_problem, Ecto.Changeset.t()}
+
+  def add_password(user_id, user_password) do
+    with {:ok, :find_user_with_user_id, user_info} <- find_user_with_user_id(user_id),
+         {:error, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash),
+         {:ok, :edit_user_password_with_user_id, user_update_info} <- edit_user_password_with_user_id(user_info, %{password: user_password}) do
+
+          {:ok, :add_password, user_update_info}
+
+    else
+      {:error, :find_user_with_user_id} ->
+        {:error, :add_password, :user_not_found}
+
+      {:ok, :chack_password_not_null} ->
+        {:error, :add_password, :password_not_null}
+
+        {:error, :edit_user_password_with_user_id, :data_input_problem, changeset} ->
+        {:error, :add_password, :data_input_problem, changeset}
+    end
+  end
+
+  @spec delete_password(data_uuid()) ::
+          {:error, :delete_password, :null_password | :user_not_found}
+          | {:ok, :delete_password, Ecto.Schema.t()}
+
+  def delete_password(user_id) do
+    with {:ok, :find_user_with_user_id, user_info} <- find_user_with_user_id(user_id),
+         {:ok, :chack_password_not_null} <- chack_password_not_null(user_info.password_hash) do
+
+          {:ok, changed_user} = Ecto.Changeset.change(user_info, %{password_hash: nil})
+          |> Db.repo.update
+
+
+          {:ok, :delete_password, changed_user}
+
+    else
+      {:error, :find_user_with_user_id} ->
+        {:error, :delete_password, :user_not_found}
+
+      {:error, :chack_password_not_null} ->
+        {:error, :delete_password, :null_password}
+    end
+  end
+
+  # show all user without paginate
+
+  @spec show_users :: Ecto.Repo.t() | [Ecto.Schema.t()]
+
+  def show_users() do
+    query = from u in ClientUserSchema,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email,
+      status: u.status,
+      unconfirmed_email: u.unconfirmed_email,
+      inserted_at: u.inserted_at,
+      updated_at: u.updated_at,
+    }
+    Db.repo.all(query)
+  end
+
+  # show all user with paginate
+  @spec show_users(number, number) :: Scrivener.Page.t() | [] | [Ecto.Schema.t()]
+
+  def show_users(pagenumber, page_size) do
+    query = from u in ClientUserSchema,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email,
+      status: u.status,
+      unconfirmed_email: u.unconfirmed_email,
+      inserted_at: u.inserted_at,
+      updated_at: u.updated_at,
+    }
+    Db.repo.paginate(query, %{page: pagenumber, page_size: page_size})
+  end
+
+  # show all user with paginate and status, this is force by gaurd cuz we need to know if there is a new EctoEnume to improve it
+  @spec show_users(number, number, any) :: Scrivener.Page.t() | [] | [Ecto.Schema.t()]
+
+  def show_users(pagenumber, page_size, status) when status < 4 do
+    query = from u in ClientUserSchema,
+    where: u.status == ^status,
+    select: %{
+      id: u.id,
+      name: u.name,
+      lastname: u.lastname,
+      username: u.username,
+      email: u.email,
+      status: u.status,
+      unconfirmed_email: u.unconfirmed_email,
+      inserted_at: u.inserted_at,
+      updated_at: u.updated_at,
+    }
+    Db.repo.paginate(query, %{page: pagenumber, page_size: page_size})
+  end
+
+  @spec reset_password(email(), String.t(), password(), :email) ::
+          {:error, :reset_password, :same_code | :user_not_found}
+          | {:ok, :reset_password, Ecto.Schema.t()}
+          | {:error, :reset_password, :data_exist | :data_input_problem,
+             String.t() | Ecto.Changeset.t()}
+
+  def reset_password(email, code, new_password, :email) do
+    with {:ok, :get_data_of_singel_id, record} <- MishkaAuth.RedisClient.get_data_of_singel_id("reset_password", email),
+         {:ok, :same_code} <- same_code(code, record["code"]),
+         {:ok, :edit_user_password, user_info} <- edit_user_password(email, %{password: new_password}) do
+
+          MishkaAuth.RedisClient.delete_record_of_redis("reset_password", email)
+
+          {:ok, :reset_password, user_info}
+    else
+      {:error, :edit_user_password, :user_not_found} ->
+        {:error, :reset_password, :user_not_found}
+
+      {:error, :get_all_fields_of_record_redis, msg} ->
+        {:error, :reset_password, :data_exist, msg}
+
+      {:error, :edit_user_password, :data_input_problem, changeset} ->
+        {:error, :reset_password, :data_input_problem, changeset}
+
+      {:error, :same_code}  ->
+        {:error, :reset_password, :same_code}
+    end
+
+  end
+
+
+  @spec reset_password(email(), String.t(), :email) ::
+          {:error, :reset_password, :find_user_with_email}
+          | {:ok, :reset_password, Ecto.Schema.t()}
+  def reset_password(email, country, :email) do
+    with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email) do
+      random_code =  MishkaAuth.Extra.randstring(8)
+
+      MishkaAuth.RedisClient.insert_or_update_into_redis("reset_password", user_info.email, %{
+        code: random_code,
+        email: email
+      }, MishkaAuth.get_config_info(:reset_password_expiration))
+
+      Sender.account_email(:reset_password, %{email: user_info.email, subject: "Reset Password", code: random_code}, country)
+      |> Mailer.mailer.deliver_later
+
+      {:ok, :reset_password, user_info}
+    else
+      {:error, :find_user_with_email} ->
+        {:error, :reset_password, :find_user_with_email}
+    end
+  end
+
+  @spec verify_email(email(), String.t(), :email, :verify) ::
+          {:ok, :verify_email}
+          | {:error, :verify_email, :same_code}
+          | {:error, :verify_email, :data_exist, String.t()}
+
+  def verify_email(email, code, :email, :verify) do
+    with {:ok, :get_data_of_singel_id, record} <- MishkaAuth.RedisClient.get_data_of_singel_id("verify_email", email),
+         {:ok, :same_code} <- same_code(code, record["code"]),
+         {:ok, :edit_user_verified_email} <- edit_user_verified_email(email) do
+
+          MishkaAuth.RedisClient.delete_record_of_redis("verify_email", email)
+
+          {:ok, :verify_email}
+    else
+      {:error, :edit_user_verified_email, :user_not_found} ->
+        {:error, :verify_email, :user_not_found}
+
+      {:error, :get_all_fields_of_record_redis, msg} ->
+        {:error, :verify_email, :data_exist, msg}
+
+      {:error, :same_code}  ->
+        {:error, :verify_email, :same_code}
+    end
+  end
+
+  @spec verify_email(email(), String.t(), :email) ::
+          {:error, :verify_email, :find_user_with_email}
+          | {:ok, :verify_email, Ecto.Schema.t()}
+
+  def verify_email(email, country, :email) do
+    with {:ok, :find_user_with_email, user_info} <- find_user_with_email(email) do
+        random_code =  MishkaAuth.Extra.randstring(8)
+
+        MishkaAuth.RedisClient.insert_or_update_into_redis("verify_email", user_info.email, %{
+          code: random_code,
+          email: email
+        }, MishkaAuth.get_config_info(:verify_email_expiration))
+
+        Sender.account_email(:verify_email, %{email: user_info.email, subject: "Verify Email", code: random_code}, country)
+        |> Mailer.mailer.deliver_later
+
+        {:ok, :verify_email, user_info}
+    else
+      {:error, :find_user_with_email} ->
+        {:error, :verify_email, :find_user_with_email}
+    end
+  end
+
+
+  defp same_code(user_code, redis_code) do
+    if user_code ===  redis_code, do: {:ok, :same_code} , else: {:error, :same_code}
   end
 
 end
