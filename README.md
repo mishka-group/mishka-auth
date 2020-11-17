@@ -479,7 +479,7 @@ For the convenience of your work, just call the following functions
 
 `reset_password` When forgetting the password and resetting it via email, as well as verifying the code and changing the password
 
-`verify_email`
+`verify_email` To activate accounts that did not activate their emails. Include creating a random code and sending it, as well as verifying the code to activate the email
 
 
 `delete_password` in cases where the user has registered once, put it directly or with a password and now only wants to use the social network and does not need a password.
