@@ -435,7 +435,215 @@ end
 
 of the above routers (login, register and callbacktest) are changeable to any path and name but the next two items are not. 
 
+---
+> The following features have been added since version 0.0.2. Please modify your config file based on the latest update
+
+### Sanitizer and validation for input and output with customization
+One of the things that can give better control for database management and to some extent in the field of security is the control of inputs and outputs of fields filled by the user.
+
+#### Related Module:
+```elixir
+MishkaAuth.Helper.SanitizeStrategy
+```
+There is a main function in this module named `changeset_input_validation(changeset, :custom)` This functions checks if you want the default validation config file which is consisted of three Regexes.
+
+```elixir
+  def regex_validation(:email) do
+    ~r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/
+  end
+
+  # Must contain lowercase and uppercase and number, at least 8 character.
+  def regex_validation(:password) do
+    ~r/(?=.*\d)(?=.*[a-zA-Z])(?!.*(\s)).{8,32}$/
+  end
+
+  # No capital letter allowed, can contain `_` and `.`, can't start with number or `_` or `.`, can't end with `_` or `.`.
+  def regex_validation(:username) do
+    ~r/(?!(\.))(?!(\_))([a-z0-9_\.]{2,15})[a-z0-9]$/
+  end
+```
+
+By default, you do not need to change or call if you just want to work apart from these and actually call your changeset, just set a value for the following two config parameters. The first is the module and the second is the name of the function, which must be written as an atom.
+
+```elixir
+input_validation_module
+input_validation_function
+```
+
+> Note: Another parameter must be placed in the configuration whose value is in Boolean to ask if you need custom validation or not: `input_validation_status`
  
+#### Additional Queries for client_user_query.ex
+For the convenience of your work, just call the following functions
+
+`show_users` to display users in your admin panel that accepts input based on the number of records status per page and the page you want to load
+
+`reset_password` When forgetting the password and resetting it via email, as well as verifying the code and changing the password
+
+`verify_email`
+
+
+`delete_password` in cases where the user has registered once, put it directly or with a password and now only wants to use the social network and does not need a password.
+
+`add_password` When the user has registered with the social network and now likes to enter a new password for his account.
+
+It should be noted that for all cases where email is sent, you need to first configure the `bamboo` plugin on your project and introduce it in the configuration to the `MishkaAuth` plugin, then also create and introduce your own email template in an elixir file.
+
+Documentation for the email plugin: : https://github.com/thoughtbot/bamboo
+
+You just need to create a file in a path and put the following lines in it:
+
+```elixir
+# some/path/within/your/app/mailer.ex
+defmodule MyApp.Mailer do
+  use Bamboo.Mailer, otp_app: :my_app
+end
+```
+
+using the link above, install and config the email sending. `SMTP` is used on this plugin. After creating the file above in config, in `mailer` parameter, put the complete module name.
+
+### Assign a dedicated email template:
+
+```
+reset_password_email
+verify_email
+```
+
+in the two parameters above you can introduce module and function that have one input which all the data in it is printable and also replacable in the dedicated template.
+
+#### Config sample:
+
+```elixir
+reset_password_expiration: 300, #5min
+verify_email_expiration: 300, #5min
+reset_password_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+verify_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+```
+
+> expiration of the random code for verification in the Redis is also changeable in the above.
+
+##### Module building sample:
+
+```elixir
+defmodule MishkaAuth.TestBodyEmail do
+
+  @site_link MishkaAuth.get_config_info(:site_link)
+
+  def reset_password_email_body(info) do
+    %{
+      text: " Password change and password forgetting code #{@site_link}/reset-password/#{info.code}",
+      html: " Password change and password forgetting code#{@site_link}/reset-password/#{info.code}",
+    }
+
+  end
+
+  def verify_email_body(info) do
+    %{
+      text: " Password change and password forgetting code #{@site_link}/reset-password/#{info.code}",
+      html: " Password change and password forgetting code #{@site_link}/reset-password/#{info.code}",
+    }
+  end
+end
+```
+> In the example above, we did not use html, but you can take full advantage of this and implement your own requests.
+
+#### Limiter
+
+Of course, this section is more supportive and its codes are written to some extent based on my needs. And if you have a specific need, I have to tell you that I do not have a plan to make it dynamic at the moment. But it is very helpful and it reduces costs of spam on your requested routers and it goes hand in hand with the `Google captcha` code.
+
+
+#### Main function:
+
+```elixir
+  def is_data_limited?(strategy, email, user_ip) do
+    case MishkaAuth.get_config_info(:limiter) do
+      true ->
+        limiter(strategy, email, user_ip)
+      _ ->
+        {:error, :limiter, :inactive}
+    end
+
+  end
+  ```
+
+as you can understand from the code above, you need to put the limiter parameter in the config and set boolean value to it.
+
+### Strategies made until now:
+
+```elixir
+  # strategies = %{
+  #   :register_limiter,
+  #   :login_limiter,
+  #   :reset_password_limiter,
+  #   :verify_email_limiter
+  # }
+
+```
+
+In the input related to this file, 3 inputs always need to be called as the following: `strategy, email, user_ip`
+
+except for the registration which is checked based on `user_ip`, the rest since are already in the website database, are checked with `email`.
+
+You can see the limitation stages in the following lines: https://github.com/mishka-group/mishka-auth/blob/master/lib/client/users/client_user_limiter.ex
+
+### Implementation of Captcha code
+Captcha code currently only supports Google and may be added in the future. Of course, if you have an opinion in this regard, be sure to share it with us.
+To call it you just need to recall `MishkaAuth.Helper.Captcha with verify(:google, google_params)` function. Be noticed that in the config also the captcha and google_re_captcha_secret have to be already there. 
+
+#### General view at the required configs:
+
+```elixr
+config :mishka_auth, MishkaAuth,
+repo: YOURREPO.Repo,
+login_redirect: "/",
+user_redirect_path: "/",
+authenticated_msg: "Successfully authenticated.",
+token_table: "user_token",
+refresh_token_table: "refresh_user_token",
+access_token_table: "access_token",
+user_refresh_token_expire_time: 18000, #5 hour
+user_access_token_expire_time: 600, #10 min
+user_jwt_token_expire_time: 6000, #10 min
+temporary_table: "temporary_user_data",
+redix: "REDIS PASSWORD",
+changeset_redirect_view: MishkaAuthWeb.AuthView,
+changeset_redirect_html: "index.html",
+register_data_view: MishkaAuthWeb.AuthView,
+register_data_html: "index.html",
+automatic_registration: true,
+pub_sub: MishkaAuth.PubSub,
+input_validation_status: :default,
+input_validation_module: nil,
+input_validation_function: nil,
+captcha: {true, :google},
+google_re_captcha_secret: "RECAPTCHA SECRET",
+site_link: "YOUR SITE LINK",
+limiter: true,
+reset_password_expiration: 300, #5min
+verify_email_expiration: 300, #5min
+reset_password_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+verify_email: %{module: MishkaAuth.TestBodyEmail, function: :reset_password_email_body},
+email_name: "@trangell.com",
+mailer: MishkaAuth.Email.Mailer
+```
+
+#### Related config to the Email:
+
+```elixir
+config :mishka_auth, MishkaAuth.Email.Mailer,
+adapter: Bamboo.SMTPAdapter,
+  server: "YOR MAIL SERVER",
+  hostname: "YOUR HOST NAME",
+  port: 587,
+  username: "YOUR EMAIL OR USERNAME",
+  password: "YOUR PASSWORD",
+  tls: :if_available,
+  allowed_tls_versions: [:tlsv1, :"tlsv1.1", :"tlsv1.2"],
+  retries: 1,
+  no_mx_lookups: true,
+  auth: :always
+```
+  
+---
 
 ### 6. time to test
 
